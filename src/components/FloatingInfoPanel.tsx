@@ -53,10 +53,11 @@ export default function FloatingInfoPanel({ artwork, artworkPosition, onClose }:
       <mesh ref={panelRef} onClick={onClose}>
         <boxGeometry args={[4, 3, 0.2]} />
         <meshStandardMaterial 
-          color="#1a1a1a" 
+          color="#2a2a2a" 
           transparent 
-          opacity={0.95}
-          roughness={0.2}
+          opacity={0.9}
+          roughness={0.3}
+          metalness={0.1}
         />
       </mesh>
       
