@@ -10,7 +10,7 @@ An immersive 3D virtual gallery showcasing Nigerian art and cultural heritage, b
 - **Realistic Environment**: Stone tile walls, wood floors, marble columns, and decorative elements
 - **Cultural Education**: Rich descriptions and historical stories for each artwork
 - **Responsive Design**: Works on desktop and mobile devices
-- **WebXR Ready**: Built for future VR/AR experiences
+- **WebXR VR Support**: Full VR immersion with controller and hand tracking
 
 ## 🖼️ Art Collection
 
@@ -30,6 +30,7 @@ Each piece includes detailed historical context, cultural significance, and arti
 - **Three.js** - 3D graphics
 - **React Three Fiber** - React renderer for Three.js
 - **React Three Drei** - Useful helpers and abstractions
+- **React Three XR** - WebXR integration for VR/AR
 - **Vite** - Build tool and dev server
 - **Tailwind CSS** - Styling (for overlays)
 
@@ -62,10 +63,17 @@ npm run dev
 
 ## 🎮 How to Use
 
+### Desktop/Mobile
 1. **Navigate**: Use mouse to orbit around the gallery, scroll to zoom in/out
 2. **Explore**: Walk through the square gallery room with artwork on all four walls
 3. **Learn**: Click on any artwork to see detailed information in a floating 3D panel
 4. **Close**: Click the red × button or anywhere on the panel to close information displays
+
+### VR Mode
+1. **Enter VR**: Click the "Enter VR" button (requires VR headset)
+2. **Move**: Point controllers at the floor and trigger to teleport
+3. **Interact**: Point at artwork and trigger to view information
+4. **Explore**: Use hand tracking or controllers for natural interaction
 
 ## 📁 Project Structure
 
@@ -152,7 +160,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🔮 Future Enhancements
 
-- VR/AR support with WebXR
 - Audio narration for artworks
 - Virtual guided tours
 - Multi-language support

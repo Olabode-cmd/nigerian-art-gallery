@@ -204,7 +204,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
           anchorY="middle"
           maxWidth={5.5}
         >
-          Click on any artwork to learn more
+          Point and select artwork to learn more
+          {"\n"}Use controllers to teleport around
         </Text>
       </group>
 
