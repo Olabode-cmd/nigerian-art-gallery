@@ -20,20 +20,20 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
   const wallHeight = 12
   
   // Load floor textures
-  const floorDiffuse = useLoader(TextureLoader, '/src/assets/models/floor_textures/textures/wood_floor_diff_2k.jpg')
-  const floorDisplacement = useLoader(TextureLoader, '/src/assets/models/floor_textures/textures/wood_floor_disp_2k.png')
+  const floorDiffuse = useLoader(TextureLoader, '/models/floor_textures/textures/wood_floor_diff_2k.jpg')
+  const floorDisplacement = useLoader(TextureLoader, '/models/floor_textures/textures/wood_floor_disp_2k.png')
   
   // Load wall textures (stone tile wall for main walls)
-  const wallDiffuse = useLoader(TextureLoader, '/src/assets/models/stone_tile_wall/textures/stone_tile_wall_diff_1k.jpg')
-  const wallDisplacement = useLoader(TextureLoader, '/src/assets/models/stone_tile_wall/textures/stone_tile_wall_disp_1k.png')
+  const wallDiffuse = useLoader(TextureLoader, '/models/stone_tile_wall/textures/stone_tile_wall_diff_1k.jpg')
+  const wallDisplacement = useLoader(TextureLoader, '/models/stone_tile_wall/textures/stone_tile_wall_disp_1k.png')
   
   // Load marble textures for columns
-  const marbleDiffuse = useLoader(TextureLoader, '/src/assets/models/marble_textures/textures/marble_mosaic_tiles_diff_1k.jpg')
-  const marbleDisplacement = useLoader(TextureLoader, '/src/assets/models/marble_textures/textures/marble_mosaic_tiles_disp_1k.png')
+  const marbleDiffuse = useLoader(TextureLoader, '/models/marble_textures/textures/marble_mosaic_tiles_diff_1k.jpg')
+  const marbleDisplacement = useLoader(TextureLoader, '/models/marble_textures/textures/marble_mosaic_tiles_disp_1k.png')
   
   // Load ceiling textures
-  const ceilingDiffuse = useLoader(TextureLoader, '/src/assets/models/ceiling_textures/textures/ceiling_interior_diff_1k.jpg')
-  const ceilingDisplacement = useLoader(TextureLoader, '/src/assets/models/ceiling_textures/textures/ceiling_interior_disp_1k.png')
+  const ceilingDiffuse = useLoader(TextureLoader, '/models/ceiling_textures/textures/ceiling_interior_diff_1k.jpg')
+  const ceilingDisplacement = useLoader(TextureLoader, '/models/ceiling_textures/textures/ceiling_interior_disp_1k.png')
   
   // Configure texture wrapping and repeat
   floorDiffuse.wrapS = floorDiffuse.wrapT = RepeatWrapping
@@ -48,14 +48,14 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
   ceilingDiffuse.repeat.set(3, 3)
   
   // Load ceiling light
-  const { scene: ceilingLight } = useGLTF('/src/assets/models/light_ceiling.glb')
+  const { scene: ceilingLight } = useGLTF('/models/light_ceiling.glb')
   
   // Load decorative models
-  const { scene: decorativeVase } = useGLTF('/src/assets/models/decorative_vase.glb')
-  const { scene: rhyzomePlant } = useGLTF('/src/assets/models/rhyzome_plant.glb')
-  // const { scene: scannedBenches } = useGLTF('/src/assets/models/scanned_benches_on_cobble.glb')
-  // const { scene: kungsaraBench } = useGLTF('/src/assets/models/the_kungsara_bench.glb')
-  const { scene: apollSculpture } = useGLTF('/src/assets/models/apoll_sculpture.glb')
+  const { scene: decorativeVase } = useGLTF('/models/decorative_vase.glb')
+  const { scene: rhyzomePlant } = useGLTF('/models/rhyzome_plant.glb')
+  // const { scene: scannedBenches } = useGLTF('/models/scanned_benches_on_cobble.glb')
+  // const { scene: kungsaraBench } = useGLTF('/models/the_kungsara_bench.glb')
+  const { scene: apollSculpture } = useGLTF('/models/apoll_sculpture.glb')
 
   return (
     <group>
