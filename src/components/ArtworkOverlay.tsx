@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 interface ArtworkOverlayProps {
   artwork: {
     id: number

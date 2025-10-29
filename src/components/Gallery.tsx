@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import Room from './Room'
-import FloatingInfoPanel from './FloatingInfoPanel'
 import { art } from '../data/art'
 
 export default function Gallery() {

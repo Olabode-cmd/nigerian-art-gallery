@@ -53,8 +53,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
   // Load decorative models
   const { scene: decorativeVase } = useGLTF('/src/assets/models/decorative_vase.glb')
   const { scene: rhyzomePlant } = useGLTF('/src/assets/models/rhyzome_plant.glb')
-  const { scene: scannedBenches } = useGLTF('/src/assets/models/scanned_benches_on_cobble.glb')
-  const { scene: kungsaraBench } = useGLTF('/src/assets/models/the_kungsara_bench.glb')
+  // const { scene: scannedBenches } = useGLTF('/src/assets/models/scanned_benches_on_cobble.glb')
+  // const { scene: kungsaraBench } = useGLTF('/src/assets/models/the_kungsara_bench.glb')
   const { scene: apollSculpture } = useGLTF('/src/assets/models/apoll_sculpture.glb')
 
   return (
