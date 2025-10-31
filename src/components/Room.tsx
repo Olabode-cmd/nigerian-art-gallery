@@ -193,11 +193,11 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       {/* Instruction Sign */}
       <group position={[0, 9, -9]}>
         <mesh>
-          <boxGeometry args={[6, 1.5, 0.1]} />
+          <boxGeometry args={[6, 2.2, 0.1]} />
           <meshStandardMaterial color="#333333" />
         </mesh>
         <Text
-          position={[0, 0, 0.06]}
+          position={[0, 0.4, 0.06]}
           fontSize={0.25}
           color="white"
           anchorX="center"
@@ -205,6 +205,26 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
           maxWidth={5.5}
         >
           Click on any artwork to learn more
+        </Text>
+        <Text
+          position={[0, -0.2, 0.06]}
+          fontSize={0.15}
+          color="#cccccc"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={5.5}
+        >
+          contact developer: olabodebalogun80@gmail.com
+        </Text>
+        <Text
+          position={[0, -0.5, 0.06]}
+          fontSize={0.15}
+          color="#cccccc"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={5.5}
+        >
+          twitter: @theavatar_bode
         </Text>
       </group>
 
