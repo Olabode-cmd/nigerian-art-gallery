@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 
 interface NavigationSelectorProps {
   isMobile: boolean
+  isVRActive?: boolean
 }
 
-export default function NavigationSelector({ isMobile }: NavigationSelectorProps) {
+export default function NavigationSelector({ isMobile, isVRActive = false }: NavigationSelectorProps) {
   const [currentMode, setCurrentMode] = useState<'orbit' | 'wasd'>('orbit')
 
   useEffect(() => {
@@ -21,7 +22,7 @@ export default function NavigationSelector({ isMobile }: NavigationSelectorProps
     }
   }
 
-  if (isMobile) {
+  if (isMobile || isVRActive) {
     return null
   }
 
@@ -30,7 +31,7 @@ export default function NavigationSelector({ isMobile }: NavigationSelectorProps
       <div style={{
         position: 'fixed',
         top: '16px',
-        right: '16px',
+        left: '16px',
         zIndex: 1000,
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(4px)',
