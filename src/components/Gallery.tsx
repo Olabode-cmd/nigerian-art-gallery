@@ -88,7 +88,13 @@ export default function Gallery() {
         try {
           const supported = await navigator.xr.isSessionSupported('immersive-vr')
           if (supported) {
-            const xrStore = createXRStore()
+            const xrStore = createXRStore({
+              controller: false,
+              hand: false,
+              transientPointer: false,
+              gaze: false,
+              screenInput: false
+            })
             setStore(xrStore)
             setIsVRSupported(true)
             
