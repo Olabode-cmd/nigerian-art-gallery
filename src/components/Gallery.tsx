@@ -92,7 +92,7 @@ function GalleryContent() {
 }
 
 export default function Gallery() {
-  const [isVRSupported, setIsVRSupported] = useState(false)
+  const [, setIsVRSupported] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [canvasError, setCanvasError] = useState(false)
   
