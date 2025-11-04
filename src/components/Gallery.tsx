@@ -125,20 +125,19 @@ export default function Gallery() {
     return (
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
         <Canvas 
-          camera={{ position: [0, 4.5, 0], fov: 75 }}
+          camera={{ position: [0, 1.6, 0], fov: 75 }}
           onCreated={({ gl }) => {
-            // Don't enable XR in VR browsers to avoid crashes
-            if (!isVRBrowser) {
-              gl.xr.enabled = true
-            }
+            // Enable XR in VR browsers for immersive experience
+            gl.xr.enabled = true
           }}
           onError={() => setCanvasError(true)}
         >
-          {/* Simple version without VR manager for VR browsers */}
+          {/* Include VR manager for VR browsers */}
+          <VRManager />
           <GalleryContent />
         </Canvas>
         
-        {/* Always show VR button in VR browsers */}
+        {/* VR button for immersive mode */}
         <button
           onClick={() => (window as any).enterVR?.()}
           style={{
@@ -147,7 +146,7 @@ export default function Gallery() {
             right: '16px',
             zIndex: 1001,
             padding: '12px 20px',
-            backgroundColor: '#007bff',
+            backgroundColor: '#28a745',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -156,7 +155,7 @@ export default function Gallery() {
             fontWeight: 'bold'
           }}
         >
-          Enter VR
+          🥽 Enter Immersive VR
         </button>
         <NavigationSelector isMobile={false} isVRActive={false} />
       </div>
