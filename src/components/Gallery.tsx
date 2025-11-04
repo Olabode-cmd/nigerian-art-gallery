@@ -1,19 +1,41 @@
 import { useState, useEffect } from 'react'
-import { Canvas } from '@react-three/fiber'
+import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
-import { XR, createXRStore, useXR } from '@react-three/xr'
 import Room from './Room'
 import FirstPersonControls from './FirstPersonControls'
 import NavigationSelector from './NavigationSelector'
-import VRControls from './VRControls'
 import { art } from '../data/art'
 
-function GalleryContent({ hasVR = false }: { hasVR?: boolean }) {
+declare global {
+  interface Window {
+    enterVR?: () => Promise<void>
+  }
+}
+
+function VRManager() {
+  const { gl } = useThree()
+  
+  useEffect(() => {
+    (window as any).enterVR = async () => {
+      if (!navigator.xr) return
+      
+      try {
+        const session = await navigator.xr.requestSession('immersive-vr')
+        gl.xr.setSession(session)
+      } catch (error) {
+        console.log('VR not available:', error)
+      }
+    }
+  }, [gl])
+  
+  return null
+}
+
+function GalleryContent() {
   const [selectedArtwork, setSelectedArtwork] = useState<typeof art[0] | null>(null)
   const [selectedArtworkPosition, setSelectedArtworkPosition] = useState<[number, number, number] | null>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [navigationMode, setNavigationMode] = useState<'orbit' | 'wasd'>('orbit')
-  const session = hasVR ? useXR((state) => state.session) : null
 
   useEffect(() => {
     const checkMobile = () => {
@@ -50,21 +72,17 @@ function GalleryContent({ hasVR = false }: { hasVR?: boolean }) {
         onClosePanel={handleCloseOverlay}
       />
       
-      {session ? (
-        <VRControls />
+      {isMobile || navigationMode === 'orbit' ? (
+        <OrbitControls 
+          enablePan={false}
+          target={[0, 4, 0]}
+          minPolarAngle={0}
+          maxPolarAngle={Math.PI / 2.2}
+          minDistance={1}
+          maxDistance={15}
+        />
       ) : (
-        isMobile || navigationMode === 'orbit' ? (
-          <OrbitControls 
-            enablePan={false}
-            target={[0, 4, 0]}
-            minPolarAngle={0}
-            maxPolarAngle={Math.PI / 2.2}
-            minDistance={1}
-            maxDistance={15}
-          />
-        ) : (
-          <FirstPersonControls />
-        )
+        <FirstPersonControls />
       )}
     </>
   )
@@ -72,35 +90,7 @@ function GalleryContent({ hasVR = false }: { hasVR?: boolean }) {
 
 export default function Gallery() {
   const [isVRSupported, setIsVRSupported] = useState(false)
-  const [isVRActive, setIsVRActive] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const [store, setStore] = useState<ReturnType<typeof createXRStore> | null>(null)
-  
-  // Detect VR browsers
-  const isVRBrowser = /OculusBrowser|Quest|SamsungBrowser.*VR/i.test(navigator.userAgent)
-  
-  if (isVRBrowser) {
-    return (
-      <div style={{ 
-        width: '100vw', 
-        height: '100vh', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor: '#1a1a1a',
-        color: 'white',
-        fontSize: '24px',
-        textAlign: 'center',
-        padding: '20px'
-      }}>
-        <div>
-          <h1>Nigerian Art Gallery</h1>
-          <p>VR Browser detected: {navigator.userAgent}</p>
-          <p>Please visit this site on desktop or mobile for the full 3D experience.</p>
-        </div>
-      </div>
-    )
-  }
 
   useEffect(() => {
     const checkMobile = () => {
@@ -110,60 +100,35 @@ export default function Gallery() {
     window.addEventListener('resize', checkMobile)
 
     const checkVRSupport = async () => {
-      if (!isMobile && 'xr' in navigator && navigator.xr) {
+      if ('xr' in navigator && navigator.xr) {
         try {
           const supported = await navigator.xr.isSessionSupported('immersive-vr')
-          if (supported) {
-            const xrStore = createXRStore({
-              controller: false,
-              hand: false,
-              transientPointer: false,
-              gaze: false,
-              screenInput: false
-            })
-            setStore(xrStore)
-            setIsVRSupported(true)
-            
-            // Listen for VR session changes
-            const unsubscribe = xrStore.subscribe((state) => {
-              setIsVRActive(!!state.session)
-            })
-            return unsubscribe
-          }
+          setIsVRSupported(supported)
         } catch {
           setIsVRSupported(false)
         }
       }
     }
+    checkVRSupport()
     
-    const cleanup = checkVRSupport()
-    
-    return () => {
-      window.removeEventListener('resize', checkMobile)
-      if (cleanup) cleanup
-    }
-  }, [isMobile])
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Canvas 
         camera={{ position: [0, 4.5, 0], fov: 75 }}
         onCreated={({ gl }) => {
-          if (store) gl.xr.enabled = true
+          gl.xr.enabled = true
         }}
       >
-        {store ? (
-          <XR store={store}>
-            <GalleryContent hasVR={true} />
-          </XR>
-        ) : (
-          <GalleryContent hasVR={false} />
-        )}
+        <VRManager />
+        <GalleryContent />
       </Canvas>
       
-      {isVRSupported && !isMobile && store && (
+      {isVRSupported && !isMobile && (
         <button
-          onClick={() => store.enterVR()}
+          onClick={() => (window as any).enterVR?.()}
           style={{
             position: 'fixed',
             top: '16px',
@@ -182,7 +147,7 @@ export default function Gallery() {
           Enter VR
         </button>
       )}
-      <NavigationSelector isMobile={isMobile} isVRActive={isVRActive} />
+      <NavigationSelector isMobile={isMobile} isVRActive={false} />
     </div>
   )
 }
