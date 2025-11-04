@@ -94,6 +94,10 @@ function GalleryContent() {
 export default function Gallery() {
   const [isVRSupported, setIsVRSupported] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [canvasError, setCanvasError] = useState(false)
+  
+  // Detect VR browsers
+  const isVRBrowser = /OculusBrowser|Quest|SamsungBrowser.*VR/i.test(navigator.userAgent)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -117,6 +121,29 @@ export default function Gallery() {
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
+  if (canvasError || isVRBrowser) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+        <Canvas 
+          camera={{ position: [0, 4.5, 0], fov: 75 }}
+          onCreated={({ gl }) => {
+            // Don't enable XR in VR browsers to avoid crashes
+            if (!isVRBrowser) {
+              gl.xr.enabled = true
+            }
+          }}
+          onError={() => setCanvasError(true)}
+        >
+          {/* Simple version without VR manager for VR browsers */}
+          <GalleryContent />
+        </Canvas>
+        
+        {/* No VR button in VR browsers */}
+        <NavigationSelector isMobile={true} isVRActive={false} />
+      </div>
+    )
+  }
+
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       <Canvas 
@@ -124,6 +151,7 @@ export default function Gallery() {
         onCreated={({ gl }) => {
           gl.xr.enabled = true
         }}
+        onError={() => setCanvasError(true)}
       >
         <VRManager />
         <GalleryContent />
