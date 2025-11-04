@@ -1,11 +1,13 @@
 import { Text } from '@react-three/drei'
-import { useXRStore } from '@react-three/xr'
+import { useXR } from '@react-three/xr'
 
 export default function VRControls() {
-  const store = useXRStore()
+  const session = useXR((state) => state.session)
 
   const handleExitVR = () => {
-    store.exitVR()
+    if (session) {
+      session.end()
+    }
   }
 
   return (
