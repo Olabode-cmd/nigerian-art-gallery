@@ -75,6 +75,32 @@ export default function Gallery() {
   const [isVRActive, setIsVRActive] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [store, setStore] = useState<ReturnType<typeof createXRStore> | null>(null)
+  
+  // Detect VR browsers
+  const isVRBrowser = /OculusBrowser|Quest|SamsungBrowser.*VR/i.test(navigator.userAgent)
+  
+  if (isVRBrowser) {
+    return (
+      <div style={{ 
+        width: '100vw', 
+        height: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center',
+        backgroundColor: '#1a1a1a',
+        color: 'white',
+        fontSize: '24px',
+        textAlign: 'center',
+        padding: '20px'
+      }}>
+        <div>
+          <h1>Nigerian Art Gallery</h1>
+          <p>VR Browser detected: {navigator.userAgent}</p>
+          <p>Please visit this site on desktop or mobile for the full 3D experience.</p>
+        </div>
+      </div>
+    )
+  }
 
   useEffect(() => {
     const checkMobile = () => {
