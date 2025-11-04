@@ -138,7 +138,28 @@ export default function Gallery() {
           <GalleryContent />
         </Canvas>
         
-        {/* No VR button in VR browsers */}
+        {/* Show VR button in VR browsers too */}
+        {!isMobile && (
+          <button
+            onClick={() => (window as any).enterVR?.()}
+            style={{
+              position: 'fixed',
+              top: '16px',
+              right: '16px',
+              zIndex: 1001,
+              padding: '12px 20px',
+              backgroundColor: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            Enter VR
+          </button>
+        )}
         <NavigationSelector isMobile={true} isVRActive={false} />
       </div>
     )
