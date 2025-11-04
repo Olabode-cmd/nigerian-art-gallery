@@ -157,7 +157,7 @@ export default function Gallery() {
         <GalleryContent />
       </Canvas>
       
-      {isVRSupported && !isMobile && (
+      {!isMobile && (
         <button
           onClick={() => (window as any).enterVR?.()}
           style={{
