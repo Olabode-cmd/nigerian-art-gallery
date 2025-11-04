@@ -125,7 +125,7 @@ export default function Gallery() {
     return (
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
         <Canvas 
-          camera={{ position: [0, 1.6, 0], fov: 75 }}
+          camera={{ position: [0, 4.5, 0], fov: 75 }}
           onCreated={({ gl }) => {
             // Enable XR in VR browsers for immersive experience
             gl.xr.enabled = true
