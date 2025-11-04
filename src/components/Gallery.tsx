@@ -20,7 +20,10 @@ function VRManager() {
       if (!navigator.xr) return
       
       try {
-        const session = await navigator.xr.requestSession('immersive-vr')
+        const session = await navigator.xr.requestSession('immersive-vr', {
+          requiredFeatures: ['viewer'],
+          optionalFeatures: ['local-floor', 'bounded-floor']
+        })
         gl.xr.setSession(session)
       } catch (error) {
         console.log('VR not available:', error)
