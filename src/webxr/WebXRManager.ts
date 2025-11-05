@@ -24,6 +24,15 @@ export class WebXRManager {
   private setupXR() {
     // Enable XR
     this.renderer.xr.enabled = true
+    
+    // Set camera height offset for VR
+    this.renderer.xr.cameraAutoUpdate = false
+    
+    // Listen for session start to set camera height
+    this.renderer.xr.addEventListener('sessionstart', () => {
+      const camera = this.renderer.xr.getCamera()
+      camera.position.y = 5
+    })
 
     // Detect and setup controllers (up to 2)
     for (let i = 0; i < 2; i++) {
@@ -93,6 +102,13 @@ export class WebXRManager {
   }
 
   public update() {
+    // Manually update XR camera when auto-update is disabled
+    if (this.renderer.xr.isPresenting) {
+      const camera = this.renderer.xr.getCamera()
+      camera.position.y = 5
+      camera.updateMatrixWorld()
+    }
+    
     // Update raycasting for each active controller
     this.controllers.forEach((controller, index) => {
       if (controller && controller.visible) {
