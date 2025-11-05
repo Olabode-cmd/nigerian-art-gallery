@@ -1,4 +1,4 @@
-import { WebGLRenderer, Scene, Group, Raycaster, Vector3, BufferGeometry, Line, LineBasicMaterial, Mesh, BoxGeometry, MeshBasicMaterial } from 'three'
+import { WebGLRenderer, Scene, Group, Raycaster, Vector3, BufferGeometry, Line, LineBasicMaterial, Mesh } from 'three'
 import { XRControllerModelFactory } from 'three/examples/jsm/webxr/XRControllerModelFactory.js'
 
 export class WebXRManager {
@@ -10,6 +10,7 @@ export class WebXRManager {
   private lasers: Line[] = []
   private intersectables: Mesh[] = []
   private controllerModelFactory: XRControllerModelFactory
+  private onArtworkSelect?: (mesh: Mesh) => void
 
   constructor(renderer: WebGLRenderer, scene: Scene) {
     this.renderer = renderer
@@ -63,22 +64,7 @@ export class WebXRManager {
   }
 
   private createTestObjects() {
-    // Create sample cubes that change color when hit
-    const positions = [
-      [-2, 1.5, -3],
-      [0, 1.5, -3],
-      [2, 1.5, -3]
-    ]
-
-    positions.forEach(pos => {
-      const geometry = new BoxGeometry(0.5, 0.5, 0.5)
-      const material = new MeshBasicMaterial({ color: 0x00ff00 })
-      const cube = new Mesh(geometry, material)
-      cube.position.set(pos[0], pos[1], pos[2])
-      cube.userData = { originalColor: 0x00ff00, isHit: false }
-      this.scene.add(cube)
-      this.intersectables.push(cube)
-    })
+    // Test objects removed - artwork interaction handled separately
   }
 
   private onSelectStart(controllerIndex: number) {
@@ -86,6 +72,15 @@ export class WebXRManager {
     const laser = this.lasers[controllerIndex]
     if (laser) {
       ;(laser.material as LineBasicMaterial).color.setHex(0x0000ff)
+    }
+    
+    // Check for artwork selection
+    const raycaster = this.raycasters[controllerIndex]
+    if (raycaster && this.onArtworkSelect) {
+      const intersects = raycaster.intersectObjects(this.intersectables)
+      if (intersects.length > 0) {
+        this.onArtworkSelect(intersects[0].object as Mesh)
+      }
     }
   }
 
@@ -114,24 +109,6 @@ export class WebXRManager {
     const tempMatrix = controller.matrixWorld
     raycaster.ray.origin.setFromMatrixPosition(tempMatrix)
     raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix).sub(raycaster.ray.origin).normalize()
-
-    // Check intersections
-    const intersects = raycaster.intersectObjects(this.intersectables)
-    
-    // Reset all objects to original color
-    this.intersectables.forEach(obj => {
-      if (obj.userData.isHit) {
-        ;(obj.material as MeshBasicMaterial).color.setHex(obj.userData.originalColor)
-        obj.userData.isHit = false
-      }
-    })
-
-    // Highlight intersected object
-    if (intersects.length > 0) {
-      const intersected = intersects[0].object as Mesh
-      ;(intersected.material as MeshBasicMaterial).color.setHex(0xffff00)
-      intersected.userData.isHit = true
-    }
   }
 
   public getIntersectables(): Mesh[] {
@@ -140,6 +117,10 @@ export class WebXRManager {
 
   public addIntersectable(mesh: Mesh) {
     this.intersectables.push(mesh)
+  }
+
+  public setArtworkSelectCallback(callback: (mesh: Mesh) => void) {
+    this.onArtworkSelect = callback
   }
 
   public dispose() {

@@ -36,6 +36,18 @@ function WebXRContent() {
     // Initialize WebXR manager
     webxrManagerRef.current = new WebXRManager(gl, scene)
     
+    // Store manager in scene for Interactive components
+    scene.userData.webxrManager = webxrManagerRef.current
+    
+    // Set artwork selection callback
+    webxrManagerRef.current.setArtworkSelectCallback((mesh) => {
+      const artworkData = mesh.userData.artwork
+      const position = mesh.userData.position
+      if (artworkData && position) {
+        handleArtworkClick(artworkData, position)
+      }
+    })
+    
     // Initialize VR button
     vrButtonRef.current = new VRButton(gl)
 
@@ -96,8 +108,12 @@ export default function Gallery() {
     <div style={{ width: '100vw', height: '100vh' }}>
       <Canvas 
         camera={{ position: [0, 5, 0], fov: 75 }}
-        onCreated={({ gl }) => {
+        onCreated={({ gl, camera }) => {
           gl.xr.enabled = true
+          // Set VR camera height to match artwork level
+          gl.xr.addEventListener('sessionstart', () => {
+            camera.position.y = 5
+          })
         }}
       >
         <WebXRContent />

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useFrame, useLoader } from '@react-three/fiber'
 import { TextureLoader, Mesh } from 'three'
 import { Text } from '@react-three/drei'
+import Interactive from './Interactive'
 
 interface ArtPieceProps {
   artwork: {
@@ -41,16 +42,21 @@ export default function ArtPiece({ artwork, position, rotation, onArtworkClick }
       </mesh>
       
       {/* Artwork */}
-      <mesh
-        ref={meshRef}
-        position={[0, 0, 0.11]}
-        onPointerOver={() => setHovered(true)}
-        onPointerOut={() => setHovered(false)}
-        onClick={() => onArtworkClick(artwork)}
+      <Interactive 
+        onSelect={() => onArtworkClick(artwork)}
+        userData={{ artwork, position }}
       >
-        <planeGeometry args={[2, 2.6]} />
-        <meshStandardMaterial map={texture} />
-      </mesh>
+        <mesh
+          ref={meshRef}
+          position={[0, 0, 0.11]}
+          onPointerOver={() => setHovered(true)}
+          onPointerOut={() => setHovered(false)}
+          onClick={() => onArtworkClick(artwork)}
+        >
+          <planeGeometry args={[2, 2.6]} />
+          <meshStandardMaterial map={texture} />
+        </mesh>
+      </Interactive>
 
       {/* Label */}
       <Text
