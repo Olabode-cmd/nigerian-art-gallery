@@ -108,12 +108,8 @@ export default function Gallery() {
     <div style={{ width: '100vw', height: '100vh' }}>
       <Canvas 
         camera={{ position: [0, 5, 0], fov: 75 }}
-        onCreated={({ gl, camera }) => {
+        onCreated={({ gl }) => {
           gl.xr.enabled = true
-          // Set VR camera height to match artwork level
-          gl.xr.addEventListener('sessionstart', () => {
-            camera.position.y = 5
-          })
         }}
       >
         <WebXRContent />
