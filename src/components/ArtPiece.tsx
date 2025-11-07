@@ -34,18 +34,18 @@ export default function ArtPiece({ artwork, position, rotation, onArtworkClick }
   })
 
   return (
-    <group position={position} rotation={rotation}>
-      {/* Frame */}
-      <mesh position={[0, 0, 0.05]}>
-        <boxGeometry args={[2.2, 2.8, 0.1]} />
-        <meshStandardMaterial color="#8B4513" />
-      </mesh>
-      
-      {/* Artwork */}
-      <Interactive 
-        onSelect={() => onArtworkClick(artwork)}
-        userData={{ artwork, position }}
-      >
+    <Interactive 
+      onSelect={() => onArtworkClick(artwork)}
+      userData={{ artwork, position }}
+    >
+      <group position={position} rotation={rotation}>
+        {/* Frame */}
+        <mesh position={[0, 0, 0.05]}>
+          <boxGeometry args={[2.2, 2.8, 0.1]} />
+          <meshStandardMaterial color="#8B4513" />
+        </mesh>
+        
+        {/* Artwork */}
         <mesh
           ref={meshRef}
           position={[0, 0, 0.11]}
@@ -56,30 +56,30 @@ export default function ArtPiece({ artwork, position, rotation, onArtworkClick }
           <planeGeometry args={[2, 2.6]} />
           <meshStandardMaterial map={texture} />
         </mesh>
-      </Interactive>
 
-      {/* Label */}
-      <Text
-        position={[0, -1.8, 0.12]}
-        fontSize={0.15}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={2}
-      >
-        {artwork.title}
-      </Text>
-      
-      <Text
-        position={[0, -2.1, 0.12]}
-        fontSize={0.12}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={2}
-      >
-        {artwork.artist} • {artwork.year}
-      </Text>
-    </group>
+        {/* Label */}
+        <Text
+          position={[0, -1.8, 0.12]}
+          fontSize={0.15}
+          color="white"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={2}
+        >
+          {artwork.title}
+        </Text>
+        
+        <Text
+          position={[0, -2.1, 0.12]}
+          fontSize={0.12}
+          color="white"
+          anchorX="center"
+          anchorY="middle"
+          maxWidth={2}
+        >
+          {artwork.artist} • {artwork.year}
+        </Text>
+      </group>
+    </Interactive>
   )
 }

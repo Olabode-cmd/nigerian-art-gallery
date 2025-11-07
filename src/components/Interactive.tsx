@@ -12,6 +12,9 @@ interface InteractiveProps {
 export default function Interactive({ children, onSelect, userData }: InteractiveProps) {
   const meshRef = useRef<Mesh>(null)
   const { scene } = useThree()
+  
+  // Extract position from userData if available
+  const artworkPosition = userData?.position || [0, 0, 0]
 
   useEffect(() => {
     if (meshRef.current && userData && onSelect) {
@@ -29,12 +32,12 @@ export default function Interactive({ children, onSelect, userData }: Interactiv
   }, [scene, userData, onSelect])
 
   return (
-    <group>
-      <mesh ref={meshRef} position={[0, 0, 0.11]} visible={false}>
+    <>
+      <mesh ref={meshRef} position={[artworkPosition[0], artworkPosition[1], artworkPosition[2] + 0.11]} visible={false}>
         <boxGeometry args={[2, 2.6, 0.1]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
       {children}
-    </group>
+    </>
   )
 }
