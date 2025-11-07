@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, cloneElement, ReactElement } from 'react'
 import { Mesh } from 'three'
 import { useThree } from '@react-three/fiber'
 
 interface InteractiveProps {
-  children: React.ReactNode
+  children: ReactElement
   onSelect?: () => void
   userData?: any
 }
@@ -13,8 +13,8 @@ export default function Interactive({ children, onSelect, userData }: Interactiv
   const { scene } = useThree()
 
   useEffect(() => {
-    if (meshRef.current && userData) {
-      meshRef.current.userData = { ...meshRef.current.userData, ...userData }
+    if (meshRef.current && userData && onSelect) {
+      meshRef.current.userData = { ...meshRef.current.userData, ...userData, onSelect }
       
       // Find WebXR manager in scene userData
       const webxrManager = scene.userData.webxrManager
@@ -22,11 +22,7 @@ export default function Interactive({ children, onSelect, userData }: Interactiv
         webxrManager.addIntersectable(meshRef.current)
       }
     }
-  }, [scene, userData])
+  }, [scene, userData, onSelect])
 
-  return (
-    <mesh ref={meshRef} onClick={onSelect}>
-      {children}
-    </mesh>
-  )
+  return cloneElement(children, { ref: meshRef })
 }

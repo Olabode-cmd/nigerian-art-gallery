@@ -76,10 +76,18 @@ export class WebXRManager {
     
     // Check for artwork selection
     const raycaster = this.raycasters[controllerIndex]
-    if (raycaster && this.onArtworkSelect) {
+    if (raycaster) {
       const intersects = raycaster.intersectObjects(this.intersectables)
       if (intersects.length > 0) {
-        this.onArtworkSelect(intersects[0].object as Mesh)
+        const mesh = intersects[0].object as Mesh
+        // Call the onSelect function stored in userData
+        if (mesh.userData.onSelect) {
+          mesh.userData.onSelect()
+        }
+        // Also call the artwork select callback if available
+        if (this.onArtworkSelect) {
+          this.onArtworkSelect(mesh)
+        }
       }
     }
   }
