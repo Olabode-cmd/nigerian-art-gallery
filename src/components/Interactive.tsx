@@ -1,4 +1,5 @@
-import { useEffect, useRef, cloneElement, ReactElement } from 'react'
+import { useEffect, useRef } from 'react'
+import type { ReactElement } from 'react'
 import { Mesh } from 'three'
 import { useThree } from '@react-three/fiber'
 
@@ -24,5 +25,13 @@ export default function Interactive({ children, onSelect, userData }: Interactiv
     }
   }, [scene, userData, onSelect])
 
-  return cloneElement(children, { ref: meshRef })
+  return (
+    <group>
+      <mesh ref={meshRef} visible={false}>
+        <boxGeometry args={[2, 2.6, 0.1]} />
+        <meshBasicMaterial transparent opacity={0} />
+      </mesh>
+      {children}
+    </group>
+  )
 }
