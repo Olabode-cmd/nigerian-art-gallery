@@ -57,9 +57,9 @@ export class WebXRManager {
   private createLaser(): Line {
     const geometry = new BufferGeometry().setFromPoints([
       new Vector3(0, 0, 0),
-      new Vector3(0, 0, -5)
+      new Vector3(0, 0, -15)
     ])
-    const material = new LineBasicMaterial({ color: 0xff0000 })
+    const material = new LineBasicMaterial({ color: 0x00ff00 })
     return new Line(geometry, material)
   }
 
@@ -68,20 +68,23 @@ export class WebXRManager {
   }
 
   private onSelectStart(controllerIndex: number) {
-    // Change laser color to blue when trigger pressed
+    // Change laser color to purple when trigger pressed
     const laser = this.lasers[controllerIndex]
     if (laser) {
-      ;(laser.material as LineBasicMaterial).color.setHex(0x0000ff)
+      ;(laser.material as LineBasicMaterial).color.setHex(0xff00ff)
     }
     
     // Check for artwork selection
     const raycaster = this.raycasters[controllerIndex]
     if (raycaster) {
       const intersects = raycaster.intersectObjects(this.intersectables)
+      console.log(`Controller ${controllerIndex} intersects:`, intersects.length, 'objects')
       if (intersects.length > 0) {
         const mesh = intersects[0].object as Mesh
+        console.log('Selected mesh userData:', mesh.userData)
         // Call the onSelect function stored in userData
         if (mesh.userData.onSelect) {
+          console.log('Calling onSelect for artwork:', mesh.userData.artwork?.title)
           mesh.userData.onSelect()
         }
         // Also call the artwork select callback if available
@@ -93,10 +96,10 @@ export class WebXRManager {
   }
 
   private onSelectEnd(controllerIndex: number) {
-    // Change laser color back to red when trigger released
+    // Change laser color back to green when trigger released
     const laser = this.lasers[controllerIndex]
     if (laser) {
-      ;(laser.material as LineBasicMaterial).color.setHex(0xff0000)
+      ;(laser.material as LineBasicMaterial).color.setHex(0x00ff00)
     }
   }
 

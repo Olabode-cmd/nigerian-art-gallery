@@ -21,13 +21,16 @@ export default function Interactive({ children, onSelect, userData }: Interactiv
       const webxrManager = scene.userData.webxrManager
       if (webxrManager) {
         webxrManager.addIntersectable(meshRef.current)
+        console.log('Added intersectable mesh for artwork:', userData.artwork?.title)
+      } else {
+        console.log('WebXR manager not found in scene userData')
       }
     }
   }, [scene, userData, onSelect])
 
   return (
     <group>
-      <mesh ref={meshRef} visible={false}>
+      <mesh ref={meshRef} position={[0, 0, 0.11]} visible={false}>
         <boxGeometry args={[2, 2.6, 0.1]} />
         <meshBasicMaterial transparent opacity={0} />
       </mesh>
