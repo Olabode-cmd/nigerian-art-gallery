@@ -24,33 +24,26 @@ export class WebXRManager {
   private setupXR() {
     // Enable XR
     this.renderer.xr.enabled = true
-
-    // Detect and setup controllers (up to 2)
     for (let i = 0; i < 2; i++) {
       this.setupController(i)
     }
   }
 
   private setupController(index: number) {
-    // Controller input
     const controller = this.renderer.xr.getController(index)
     controller.addEventListener('selectstart', () => this.onSelectStart(index))
     controller.addEventListener('selectend', () => this.onSelectEnd(index))
     this.scene.add(controller)
     this.controllers[index] = controller
 
-    // Controller grip (for model)
     const controllerGrip = this.renderer.xr.getControllerGrip(index)
     controllerGrip.add(this.controllerModelFactory.createControllerModel(controllerGrip))
     this.scene.add(controllerGrip)
     this.controllerGrips[index] = controllerGrip
 
-    // Laser beam
     const laser = this.createLaser()
     controller.add(laser)
     this.lasers[index] = laser
-
-    // Raycaster
     this.raycasters[index] = new Raycaster()
   }
 
@@ -68,13 +61,11 @@ export class WebXRManager {
   }
 
   private onSelectStart(controllerIndex: number) {
-    // Change laser color to purple when trigger pressed
     const laser = this.lasers[controllerIndex]
     if (laser) {
       ;(laser.material as LineBasicMaterial).color.setHex(0xff00ff)
     }
     
-    // Check for artwork selection
     const raycaster = this.raycasters[controllerIndex]
     if (raycaster) {
       const intersects = raycaster.intersectObjects(this.intersectables)
@@ -82,12 +73,10 @@ export class WebXRManager {
       if (intersects.length > 0) {
         const mesh = intersects[0].object as Mesh
         console.log('Selected mesh userData:', mesh.userData)
-        // Call the onSelect function stored in userData
         if (mesh.userData.onSelect) {
           console.log('Calling onSelect for artwork:', mesh.userData.artwork?.title)
           mesh.userData.onSelect()
         }
-        // Also call the artwork select callback if available
         if (this.onArtworkSelect) {
           this.onArtworkSelect(mesh)
         }
@@ -96,7 +85,6 @@ export class WebXRManager {
   }
 
   private onSelectEnd(controllerIndex: number) {
-    // Change laser color back to green when trigger released
     const laser = this.lasers[controllerIndex]
     if (laser) {
       ;(laser.material as LineBasicMaterial).color.setHex(0x00ff00)
@@ -104,7 +92,6 @@ export class WebXRManager {
   }
 
   public update() {
-    // Update raycasting for each active controller
     this.controllers.forEach((controller, index) => {
       if (controller && controller.visible) {
         this.updateRaycasting(controller, index)
@@ -116,7 +103,6 @@ export class WebXRManager {
     const raycaster = this.raycasters[index]
     if (!raycaster) return
 
-    // Set raycaster from controller position and direction
     const tempMatrix = controller.matrixWorld
     raycaster.ray.origin.setFromMatrixPosition(tempMatrix)
     raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix).sub(raycaster.ray.origin).normalize()

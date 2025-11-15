@@ -35,11 +35,7 @@ function WebXRContent() {
   useEffect(() => {
     // Initialize WebXR manager
     webxrManagerRef.current = new WebXRManager(gl, scene)
-    
-    // Store manager in scene for Interactive components
     scene.userData.webxrManager = webxrManagerRef.current
-    
-    // Set artwork selection callback
     webxrManagerRef.current.setArtworkSelectCallback((mesh) => {
       const artworkData = mesh.userData.artwork
       const position = mesh.userData.position
@@ -48,7 +44,6 @@ function WebXRContent() {
       }
     })
     
-    // Initialize VR button
     vrButtonRef.current = new VRButton(gl)
 
     // Animation loop

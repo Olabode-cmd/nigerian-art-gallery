@@ -39,13 +39,11 @@ export default function ArtPiece({ artwork, position, rotation, onArtworkClick }
       userData={{ artwork, position }}
     >
       <group position={position} rotation={rotation}>
-        {/* Frame */}
         <mesh position={[0, 0, 0.05]}>
           <boxGeometry args={[2.2, 2.8, 0.1]} />
           <meshStandardMaterial color="#8B4513" />
         </mesh>
         
-        {/* Artwork */}
         <mesh
           ref={meshRef}
           position={[0, 0, 0.11]}
@@ -57,7 +55,6 @@ export default function ArtPiece({ artwork, position, rotation, onArtworkClick }
           <meshStandardMaterial map={texture} />
         </mesh>
 
-        {/* Label */}
         <Text
           position={[0, -1.8, 0.12]}
           fontSize={0.15}

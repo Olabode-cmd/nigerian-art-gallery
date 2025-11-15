@@ -29,8 +29,6 @@ export default function FloatingInfoPanel({ artwork, artworkPosition, onClose }:
   })
 
   if (!artwork || !artworkPosition) return null
-
-  // Calculate position 3 meters in front of artwork toward room center
   const [artX, artY, artZ] = artworkPosition
   const centerX = 0
   const centerZ = 0
@@ -44,12 +42,10 @@ export default function FloatingInfoPanel({ artwork, artworkPosition, onClose }:
   const panelZ = artZ + normalizedZ * 3
   const panelY = artY - 0.5
   
-  // Calculate rotation to face toward room center
   const rotationY = Math.atan2(normalizedX, normalizedZ)
 
   return (
     <group position={[panelX, panelY, panelZ]} rotation={[0, rotationY, 0]} visible={isVisible}>
-      {/* Panel Background */}
       <mesh ref={panelRef} onClick={onClose}>
         <boxGeometry args={[4, 3, 0.2]} />
         <meshStandardMaterial 

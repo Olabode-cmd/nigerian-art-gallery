@@ -6,7 +6,7 @@ interface NavigationSelectorProps {
 }
 
 export default function NavigationSelector({ isMobile, isVRActive = false }: NavigationSelectorProps) {
-  const [currentMode, setCurrentMode] = useState<'orbit' | 'wasd'>('orbit')
+  const [currentMode, setCurrentMode] = useState<'orbit' | 'wasd'>('wasd')
 
   useEffect(() => {
     const saved = localStorage.getItem('navigationMode') as 'orbit' | 'wasd'

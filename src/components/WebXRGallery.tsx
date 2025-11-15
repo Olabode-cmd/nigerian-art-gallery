@@ -11,13 +11,8 @@ function WebXRContent() {
   const vrButtonRef = useRef<VRButton | null>(null)
 
   useEffect(() => {
-    // Initialize WebXR manager
     webxrManagerRef.current = new WebXRManager(gl, scene)
-    
-    // Initialize VR button
     vrButtonRef.current = new VRButton(gl)
-
-    // Animation loop
     const animate = () => {
       webxrManagerRef.current?.update()
     }
@@ -35,8 +30,6 @@ function WebXRContent() {
     <>
       <ambientLight intensity={0.8} />
       <directionalLight position={[10, 10, 5]} intensity={1} />
-      
-      {/* Gallery room */}
       <Room 
         onArtworkClick={() => {}}
         selectedArtwork={null}
@@ -44,7 +37,6 @@ function WebXRContent() {
         onClosePanel={() => {}}
       />
 
-      {/* Fallback controls for non-VR */}
       <OrbitControls 
         enablePan={false}
         target={[0, 4, 0]}

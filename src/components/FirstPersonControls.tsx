@@ -19,7 +19,6 @@ export default function FirstPersonControls() {
   const wallBuffer = 1
 
   useEffect(() => {
-    // Set initial camera rotation to face north wall
     camera.rotation.set(0, 0, 0)
   }, [])
 
@@ -50,8 +49,6 @@ export default function FirstPersonControls() {
   useFrame((_, delta) => {
     const moveSpeed = 5
     const turnSpeed = 1
-
-    // Reset velocity
     velocity.current.set(0, 0, 0)
 
     // Movement (WASD)
@@ -81,7 +78,6 @@ export default function FirstPersonControls() {
     const halfRoom = roomSize / 2 - wallBuffer
     newPosition.x = Math.max(-halfRoom, Math.min(halfRoom, newPosition.x))
     newPosition.z = Math.max(-halfRoom, Math.min(halfRoom, newPosition.z))
-    // Keep camera at artwork viewing height
     newPosition.y = 4.5
     
     camera.position.copy(newPosition)

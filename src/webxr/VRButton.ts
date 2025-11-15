@@ -31,7 +31,6 @@ export class VRButton {
   }
 
   private async setupEventListeners() {
-    // Check VR support
     if (!navigator.xr) {
       this.button.style.display = 'none'
       return
@@ -48,10 +47,7 @@ export class VRButton {
       return
     }
 
-    // Add click handler
     this.button.addEventListener('click', this.onButtonClick.bind(this))
-
-    // Update button state based on XR session
     this.renderer.xr.addEventListener('sessionstart', () => {
       this.button.textContent = 'Exit VR'
       this.button.style.backgroundColor = '#dc3545'

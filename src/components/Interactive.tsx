@@ -12,15 +12,11 @@ interface InteractiveProps {
 export default function Interactive({ children, onSelect, userData }: InteractiveProps) {
   const meshRef = useRef<Mesh>(null)
   const { scene } = useThree()
-  
-  // Extract position from userData if available
   const artworkPosition = userData?.position || [0, 0, 0]
 
   useEffect(() => {
     if (meshRef.current && userData && onSelect) {
       meshRef.current.userData = { ...meshRef.current.userData, ...userData, onSelect }
-      
-      // Find WebXR manager in scene userData
       const webxrManager = scene.userData.webxrManager
       if (webxrManager) {
         webxrManager.addIntersectable(meshRef.current)
