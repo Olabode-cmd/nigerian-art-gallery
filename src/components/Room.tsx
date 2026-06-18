@@ -1,11 +1,11 @@
-import { useRef } from 'react'
-import { Mesh, RepeatWrapping } from 'three'
-import { useLoader } from '@react-three/fiber'
-import { TextureLoader } from 'three'
+import { useRef, Suspense } from 'react'
+import { Mesh } from 'three'
 import { useGLTF, Text } from '@react-three/drei'
 import ArtPiece from './ArtPiece'
 import FloatingInfoPanel from './FloatingInfoPanel'
+import LazyDecorations from './LazyDecorations'
 import { art } from '../data/art'
+import { useOptimizedTexturePair } from '../hooks/useOptimizedTexture'
 
 interface RoomProps {
   onArtworkClick: (artwork: typeof art[0], position: [number, number, number]) => void
@@ -19,43 +19,30 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
   const roomSize = 20
   const wallHeight = 12
   
-  // Load floor textures
-  const floorDiffuse = useLoader(TextureLoader, '/models/floor_textures/textures/wood_floor_diff_2k.jpg')
-  const floorDisplacement = useLoader(TextureLoader, '/models/floor_textures/textures/wood_floor_disp_2k.png')
+  const floor = useOptimizedTexturePair(
+    '/models/floor_textures/textures/wood_floor_diff_2k.jpg',
+    '/models/floor_textures/textures/wood_floor_disp_2k.png',
+    [4, 4]
+  )
   
-  // Load wall textures (stone tile wall for main walls)
-  const wallDiffuse = useLoader(TextureLoader, '/models/stone_tile_wall/textures/stone_tile_wall_diff_1k.jpg')
-  const wallDisplacement = useLoader(TextureLoader, '/models/stone_tile_wall/textures/stone_tile_wall_disp_1k.png')
+  const wall = useOptimizedTexturePair(
+    '/models/stone_tile_wall/textures/stone_tile_wall_diff_1k.jpg',
+    '/models/stone_tile_wall/textures/stone_tile_wall_disp_1k.png',
+    [4, 2]
+  )
   
-  // Load marble textures for columns
-  const marbleDiffuse = useLoader(TextureLoader, '/models/marble_textures/textures/marble_mosaic_tiles_diff_1k.jpg')
-  const marbleDisplacement = useLoader(TextureLoader, '/models/marble_textures/textures/marble_mosaic_tiles_disp_1k.png')
+  const marble = useOptimizedTexturePair(
+    '/models/marble_textures/textures/marble_mosaic_tiles_diff_1k.jpg',
+    '/models/marble_textures/textures/marble_mosaic_tiles_disp_1k.png'
+  )
   
-  // Load ceiling textures
-  const ceilingDiffuse = useLoader(TextureLoader, '/models/ceiling_textures/textures/ceiling_interior_diff_1k.jpg')
-  const ceilingDisplacement = useLoader(TextureLoader, '/models/ceiling_textures/textures/ceiling_interior_disp_1k.png')
+  const ceiling = useOptimizedTexturePair(
+    '/models/ceiling_textures/textures/ceiling_interior_diff_1k.jpg',
+    '/models/ceiling_textures/textures/ceiling_interior_disp_1k.png',
+    [3, 3]
+  )
   
-  // Configure texture wrapping and repeat
-  floorDiffuse.wrapS = floorDiffuse.wrapT = RepeatWrapping
-  floorDiffuse.repeat.set(4, 4)
-  floorDisplacement.wrapS = floorDisplacement.wrapT = RepeatWrapping
-  floorDisplacement.repeat.set(4, 4)
-  
-  wallDiffuse.wrapS = wallDiffuse.wrapT = RepeatWrapping
-  wallDiffuse.repeat.set(4, 2)
-  
-  ceilingDiffuse.wrapS = ceilingDiffuse.wrapT = RepeatWrapping
-  ceilingDiffuse.repeat.set(3, 3)
-  
-  // Load ceiling light
   const { scene: ceilingLight } = useGLTF('/models/light_ceiling.glb')
-  
-  // Load decorative models
-  const { scene: decorativeVase } = useGLTF('/models/decorative_vase.glb')
-  const { scene: rhyzomePlant } = useGLTF('/models/rhyzome_plant.glb')
-  // const { scene: scannedBenches } = useGLTF('/models/scanned_benches_on_cobble.glb')
-  // const { scene: kungsaraBench } = useGLTF('/models/the_kungsara_bench.glb')
-  const { scene: apollSculpture } = useGLTF('/models/apoll_sculpture.glb')
 
   return (
     <group>
@@ -63,8 +50,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       <mesh ref={floorRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
         <planeGeometry args={[roomSize, roomSize]} />
         <meshStandardMaterial 
-          map={floorDiffuse}
-          displacementMap={floorDisplacement}
+          map={floor.diffuse}
+          displacementMap={floor.displacement}
           displacementScale={0.1}
           roughness={0.6}
         />
@@ -75,8 +62,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       <mesh position={[0, wallHeight/2, -roomSize/2]}>
         <boxGeometry args={[roomSize, wallHeight, 0.5]} />
         <meshStandardMaterial 
-          map={wallDiffuse}
-          displacementMap={wallDisplacement}
+          map={wall.diffuse}
+          displacementMap={wall.displacement}
           displacementScale={0.05}
           roughness={0.8}
           metalness={0.1}
@@ -87,8 +74,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       <mesh position={[0, wallHeight/2, roomSize/2]}>
         <boxGeometry args={[roomSize, wallHeight, 0.5]} />
         <meshStandardMaterial 
-          map={wallDiffuse}
-          displacementMap={wallDisplacement}
+          map={wall.diffuse}
+          displacementMap={wall.displacement}
           displacementScale={0.05}
           roughness={0.8}
           metalness={0.1}
@@ -99,8 +86,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       <mesh position={[roomSize/2, wallHeight/2, 0]}>
         <boxGeometry args={[0.5, wallHeight, roomSize]} />
         <meshStandardMaterial 
-          map={wallDiffuse}
-          displacementMap={wallDisplacement}
+          map={wall.diffuse}
+          displacementMap={wall.displacement}
           displacementScale={0.05}
           roughness={0.8}
           metalness={0.1}
@@ -111,8 +98,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       <mesh position={[-roomSize/2, wallHeight/2, 0]}>
         <boxGeometry args={[0.5, wallHeight, roomSize]} />
         <meshStandardMaterial 
-          map={wallDiffuse}
-          displacementMap={wallDisplacement}
+          map={wall.diffuse}
+          displacementMap={wall.displacement}
           displacementScale={0.05}
           roughness={0.8}
           metalness={0.1}
@@ -124,8 +111,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
         <mesh key={i} position={[x * (roomSize/2 - 0.5), wallHeight/2, z * (roomSize/2 - 0.5)]}>
           <cylinderGeometry args={[0.3, 0.4, wallHeight, 12]} />
           <meshStandardMaterial 
-            map={marbleDiffuse}
-            displacementMap={marbleDisplacement}
+            map={marble.diffuse}
+            displacementMap={marble.displacement}
             displacementScale={0.02}
             roughness={0.4}
             metalness={0.1}
@@ -137,8 +124,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, wallHeight, 0]}>
         <planeGeometry args={[roomSize, roomSize]} />
         <meshStandardMaterial 
-          map={ceilingDiffuse}
-          displacementMap={ceilingDisplacement}
+          map={ceiling.diffuse}
+          displacementMap={ceiling.displacement}
           displacementScale={0.03}
           roughness={0.6}
           metalness={0.05}
@@ -147,48 +134,13 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       
       {/* Ceiling Light */}
       <primitive
-        object={ceilingLight.clone()}
+        object={ceilingLight}
         position={[0, wallHeight - 0.5, 0]}
         scale={[1.5, 1.5, 1.5]}
       />
       
-      {/* Decorative Elements */}
-      {/* Decorative Vase - in corner */}
-      <primitive 
-        object={decorativeVase.clone()} 
-        position={[8, 0, 4]} 
-        scale={[0.015, 0.015, 0.015]} 
-      />
-      
-      {/* Rhyzome Plant */}
-      <primitive 
-        object={rhyzomePlant.clone()} 
-        position={[-6, 0, -8]} 
-        scale={[1.8, 1.8, 1.8]} 
-      />
-      
-      {/* Scanned Benches - center of room */}
-      {/* <primitive 
-        object={scannedBenches.clone()} 
-        position={[0, 0, 0]} 
-        scale={[0.4, 0.4, 0.4]} 
-      /> */}
-      
-      {/* Kungsara Bench - along wall center */}
-      {/* <primitive 
-        object={kungsaraBench.clone()} 
-        position={[0, 0, 8]} 
-        rotation={[0, 0, 0]}
-        scale={[0.8, 0.8, 0.8]} 
-      /> */}
-      
-      {/* Apollo Sculpture - in empty corner */}
-      <primitive 
-        object={apollSculpture.clone()} 
-        position={[-8, 0, 8]} 
-        rotation={[0, Math.PI/3, 0]}
-        scale={[0.85, 0.85, 0.85]} 
-      />
+      {/* Decorative Elements - Lazy Loaded */}
+      <LazyDecorations />
 
       {/* Instruction Sign */}
       <group position={[0, 9, -9]}>
@@ -236,7 +188,8 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
       />
 
       {/* Art Pieces - 4 per wall */}
-      {art.map((artwork, index) => {
+      <Suspense fallback={null}>
+        {art.map((artwork, index) => {
         const wallIndex = Math.floor(index / 4)
         const positionOnWall = index % 4
         const spacing = roomSize / 5
@@ -276,6 +229,9 @@ export default function Room({ onArtworkClick, selectedArtwork, selectedArtworkP
           />
         )
       })}
+      </Suspense>
     </group>
   )
 }
+
+useGLTF.preload('/models/light_ceiling.glb')

@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import Room from './Room'
 import FirstPersonControls from './FirstPersonControls'
 import NavigationSelector from './NavigationSelector'
+import LoadingScreen from './LoadingScreen'
 import { WebXRManager } from '../webxr/WebXRManager'
 import { VRButton } from '../webxr/VRButton'
 import { art } from '../data/art'
@@ -73,12 +74,14 @@ function WebXRContent() {
   return (
     <>
       <ambientLight intensity={0.8} />
-      <Room 
-        onArtworkClick={handleArtworkClick}
-        selectedArtwork={selectedArtwork}
-        selectedArtworkPosition={selectedArtworkPosition}
-        onClosePanel={handleCloseOverlay}
-      />
+      <Suspense fallback={null}>
+        <Room 
+          onArtworkClick={handleArtworkClick}
+          selectedArtwork={selectedArtwork}
+          selectedArtworkPosition={selectedArtworkPosition}
+          onClosePanel={handleCloseOverlay}
+        />
+      </Suspense>
       
       {isMobile || navigationMode === 'orbit' ? (
         <OrbitControls 
@@ -101,6 +104,7 @@ function WebXRContent() {
 export default function Gallery() {
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
+      <LoadingScreen />
       <Canvas 
         camera={{ position: [0, 5, 0], fov: 75 }}
         onCreated={({ gl }) => {

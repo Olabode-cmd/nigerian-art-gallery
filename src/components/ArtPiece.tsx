@@ -24,6 +24,7 @@ export default function ArtPiece({ artwork, position, rotation, onArtworkClick }
   const [hovered, setHovered] = useState(false)
   
   const texture = useLoader(TextureLoader, artwork.image)
+  texture.anisotropy = 4
 
   useFrame(() => {
     if (meshRef.current && hovered) {
