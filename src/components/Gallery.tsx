@@ -75,7 +75,7 @@ export default function Gallery() {
     <div style={{ width: '100vw', height: '100vh' }}>
       <LoadingScreen />
       <Canvas
-        camera={{ position: [0, 5, 0], fov: 75 }}
+        camera={{ position: [0, 5, 8], fov: 75 }}
         dpr={[1, 1.5]}
         gl={{ powerPreference: 'high-performance', antialias: false }}
       >
