@@ -96,7 +96,7 @@ if (isVRBrowser) {
 
 **Issues**: Button disappearing, complex state management conflicts
 
-### ✅ Phase 6: Standard Three.js WebXR Implementation (Latest)
+### ✅ Phase 6: Standard Three.js WebXR Implementation
 **Goal**: Implement production-ready WebXR using standard Three.js APIs
 
 **Implementation**:
@@ -114,7 +114,18 @@ if (isVRBrowser) {
 - ✅ **Production-ready code** with proper cleanup
 - ✅ **Modular architecture** for easy integration
 
-**Usage**: Add `?webxr=true` to URL to use new implementation
+**Usage**: The WebXR implementation runs by default; use the "Enter VR" button on any WebXR-capable device.
+
+### Phase 7: Consolidation & Cleanup (current)
+**Goal**: Merge the duplicate galleries and fix interaction bugs
+
+- Merged `WebXRGallery.tsx` into `Gallery.tsx` — both paths already shared the same WebXR stack (`WebXRManager` + `VRButton` + `gl.xr.enabled`), so `?webxr=true` no longer provided anything different
+- Replaced prop drilling with a Zustand store (`src/store.ts`) for selected artwork, navigation mode, mobile flag, and the XR manager reference
+- Navigation mode now switches reactively — no more `window.location.reload()`
+- Fixed VR selection: the artwork mesh itself is registered for raycasting (inherits wall rotation, so one hitbox works on all four walls), registered exactly once with cleanup on unmount
+- Removed displacement maps from room materials (no visible effect on low-poly geometry, significant bandwidth savings)
+- Removed unused components (`ArtworkOverlay`, `ArtworkOverlay3D`, `Interactive`), utilities, and assets
+- Carried over the directional light from the old WebXR gallery into the merged one
 
 ## Technical Architecture
 
@@ -123,13 +134,10 @@ if (isVRBrowser) {
 - **Mobile**: Touch-based orbit controls  
 - **VR**: Natural head tracking + controller interaction
 
-### Dual VR Implementation
+### VR Implementation
 ```typescript
-// React Three Fiber approach (default)
-const session = useXR((state) => state.session)
-
-// Standard Three.js WebXR approach (?webxr=true)
-const webxrManager = new WebXRManager(renderer, scene, camera)
+// Standard Three.js WebXR approach (used by the merged Gallery)
+const webxrManager = new WebXRManager(renderer, scene)
 ```
 
 ### Browser Compatibility Strategy
@@ -143,9 +151,8 @@ const webxrManager = new WebXRManager(renderer, scene, camera)
 ### ✅ Working Features
 - 3D gallery loads on all platforms (desktop, mobile, VR browsers)
 - Immersive VR mode with proper perspective
-- **Two VR implementations**:
-  - React Three Fiber + @react-three/xr (default)
-  - Standard Three.js WebXR (add `?webxr=true`)
+- **One merged implementation**:
+  - React Three Fiber for rendering/state, standard Three.js WebXR APIs (`WebXRManager` + `VRButton`) for VR
 - VR controller interaction with laser beams and raycasting
 - Artwork information panels in VR space
 - Seamless navigation between 2D and VR modes
@@ -178,25 +185,30 @@ bun run dev
 # Build for production
 bun run build
 
-# Test WebXR implementation
-http://localhost:5173?webxr=true
+# Test VR: open on a WebXR-capable browser/device and use the "Enter VR" button
 ```
 
 ## File Structure
 ```
 src/
 ├── components/
-│   ├── Gallery.tsx           # React Three Fiber implementation
-│   ├── WebXRGallery.tsx      # Standard Three.js WebXR implementation
-│   ├── Room.tsx              # 3D gallery room
-│   ├── ArtPiece.tsx          # Interactive artwork components
-│   ├── VRControllers.tsx     # React Three Fiber VR controllers
+│   ├── Gallery.tsx            # Root gallery: canvas, lighting, controls, XR setup
+│   ├── Room.tsx               # 3D gallery room
+│   ├── ArtPiece.tsx           # Interactive artwork components
+│   ├── FloatingInfoPanel.tsx  # 3D information displays
+│   ├── LazyDecorations.tsx    # Lazily loaded decorative models
 │   ├── NavigationSelector.tsx # Desktop navigation options
-│   └── FloatingInfoPanel.tsx # 3D information displays
-└── webxr/
-    ├── WebXRManager.ts       # Standard WebXR controller management
-    ├── VRButton.ts           # VR entry/exit button
-    └── index.ts              # Module exports
+│   ├── FirstPersonControls.tsx# WASD first-person controls
+│   └── LoadingScreen.tsx      # Loading progress overlay
+├── hooks/
+│   ├── useOptimizedTexture.ts # Texture loading with tiling
+│   └── useIntersectable.ts    # Registers meshes for VR controller selection
+├── webxr/
+│   ├── WebXRManager.ts        # Standard WebXR controller management
+│   └── VRButton.ts            # VR entry/exit button
+├── data/
+│   └── art.ts                 # Artwork data
+└── store.ts                   # Zustand store (UI state)
 ```
 
 ---

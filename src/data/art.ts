@@ -1,4 +1,4 @@
-interface Art {
+export interface Artwork {
     id: number;
     title: string;
     artist: string;
@@ -8,7 +8,7 @@ interface Art {
     image: string;
 }
 
-export const art: Art[] = [
+export const art: Artwork[] = [
   {
     id: 1,
     title: "Bronze Head from Ife",

@@ -1,8 +1,10 @@
+import type { WebGLRenderer } from 'three'
+
 export class VRButton {
   private button: HTMLButtonElement
-  private renderer: any
+  private renderer: WebGLRenderer
 
-  constructor(renderer: any) {
+  constructor(renderer: WebGLRenderer) {
     this.renderer = renderer
     this.button = this.createButton()
     this.setupEventListeners()
@@ -30,6 +32,24 @@ export class VRButton {
     return button
   }
 
+  private onButtonClick = () => {
+    if (this.renderer.xr.isPresenting) {
+      this.renderer.xr.getSession()?.end()
+    } else {
+      this.requestSession()
+    }
+  }
+
+  private onSessionStart = () => {
+    this.button.textContent = 'Exit VR'
+    this.button.style.backgroundColor = '#dc3545'
+  }
+
+  private onSessionEnd = () => {
+    this.button.textContent = 'Enter VR'
+    this.button.style.backgroundColor = '#007bff'
+  }
+
   private async setupEventListeners() {
     if (!navigator.xr) {
       this.button.style.display = 'none'
@@ -47,35 +67,29 @@ export class VRButton {
       return
     }
 
-    this.button.addEventListener('click', this.onButtonClick.bind(this))
-    this.renderer.xr.addEventListener('sessionstart', () => {
-      this.button.textContent = 'Exit VR'
-      this.button.style.backgroundColor = '#dc3545'
-    })
-
-    this.renderer.xr.addEventListener('sessionend', () => {
-      this.button.textContent = 'Enter VR'
-      this.button.style.backgroundColor = '#007bff'
-    })
+    this.button.addEventListener('click', this.onButtonClick)
+    this.renderer.xr.addEventListener('sessionstart', this.onSessionStart)
+    this.renderer.xr.addEventListener('sessionend', this.onSessionEnd)
   }
 
-  private async onButtonClick() {
-    if (this.renderer.xr.isPresenting) {
-      this.renderer.xr.getSession()?.end()
-    } else {
-      try {
-        const session = await navigator.xr!.requestSession('immersive-vr', {
-          requiredFeatures: ['viewer'],
-          optionalFeatures: ['local-floor', 'bounded-floor']
-        })
-        this.renderer.xr.setSession(session)
-      } catch (error) {
-        console.error('Failed to start VR session:', error)
-      }
+  private async requestSession() {
+    if (!navigator.xr) return
+
+    try {
+      const session = await navigator.xr.requestSession('immersive-vr', {
+        requiredFeatures: ['viewer'],
+        optionalFeatures: ['local-floor', 'bounded-floor']
+      })
+      this.renderer.xr.setSession(session)
+    } catch (error) {
+      console.error('Failed to start VR session:', error)
     }
   }
 
   public dispose() {
+    this.button.removeEventListener('click', this.onButtonClick)
+    this.renderer.xr.removeEventListener('sessionstart', this.onSessionStart)
+    this.renderer.xr.removeEventListener('sessionend', this.onSessionEnd)
     if (this.button.parentNode) {
       this.button.parentNode.removeChild(this.button)
     }

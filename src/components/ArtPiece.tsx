@@ -1,83 +1,66 @@
-import { useRef, useState } from 'react'
-import { useFrame, useLoader } from '@react-three/fiber'
+import { useRef } from 'react'
+import { useLoader } from '@react-three/fiber'
 import { TextureLoader, Mesh } from 'three'
 import { Text } from '@react-three/drei'
-import Interactive from './Interactive'
+import { useIntersectable } from '../hooks/useIntersectable'
+import type { Artwork } from '../data/art'
 
 interface ArtPieceProps {
-  artwork: {
-    id: number
-    title: string
-    artist: string
-    year: string
-    description: string
-    story: string
-    image: string
-  }
+  artwork: Artwork
   position: [number, number, number]
   rotation: [number, number, number]
-  onArtworkClick: (artwork: ArtPieceProps['artwork']) => void
+  onSelect: () => void
 }
 
-export default function ArtPiece({ artwork, position, rotation, onArtworkClick }: ArtPieceProps) {
+export default function ArtPiece({ artwork, position, rotation, onSelect }: ArtPieceProps) {
   const meshRef = useRef<Mesh>(null)
-  const [hovered, setHovered] = useState(false)
-  
+
   const texture = useLoader(TextureLoader, artwork.image)
   texture.anisotropy = 4
 
-  useFrame(() => {
-    if (meshRef.current && hovered) {
-      meshRef.current.scale.setScalar(1.05)
-    } else if (meshRef.current) {
-      meshRef.current.scale.setScalar(1)
-    }
-  })
+  // Register the artwork mesh for VR controller selection. Being part of the
+  // rotated group, it inherits the wall orientation — one hitbox for all walls.
+  useIntersectable(meshRef, artwork, onSelect)
 
   return (
-    <Interactive 
-      onSelect={() => onArtworkClick(artwork)}
-      userData={{ artwork, position }}
-    >
-      <group position={position} rotation={rotation}>
-        <mesh position={[0, 0, 0.05]}>
-          <boxGeometry args={[2.2, 2.8, 0.1]} />
-          <meshStandardMaterial color="#8B4513" />
-        </mesh>
-        
-        <mesh
-          ref={meshRef}
-          position={[0, 0, 0.11]}
-          onPointerOver={() => setHovered(true)}
-          onPointerOut={() => setHovered(false)}
-          onClick={() => onArtworkClick(artwork)}
-        >
-          <planeGeometry args={[2, 2.6]} />
-          <meshStandardMaterial map={texture} />
-        </mesh>
+    <group position={position} rotation={rotation}>
+      <mesh position={[0, 0, 0.05]}>
+        <boxGeometry args={[2.2, 2.8, 0.1]} />
+        <meshStandardMaterial color="#8B4513" />
+      </mesh>
 
-        <Text
-          position={[0, -1.8, 0.12]}
-          fontSize={0.15}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={2}
-        >
-          {artwork.title}
-        </Text>
-        
-        <Text
-          position={[0, -2.1, 0.12]}
-          fontSize={0.12}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={2}
-        >
-          {artwork.artist} • {artwork.year}
-        </Text>
-      </group>
-    </Interactive>
+      <mesh
+        ref={meshRef}
+        position={[0, 0, 0.11]}
+        onPointerOver={() => meshRef.current?.scale.setScalar(1.05)}
+        onPointerOut={() => meshRef.current?.scale.setScalar(1)}
+        onClick={onSelect}
+      >
+        <planeGeometry args={[2, 2.6]} />
+        <meshStandardMaterial map={texture} />
+      </mesh>
+
+      <Text
+        position={[0, -1.8, 0.12]}
+        fontSize={0.15}
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={2}
+      >
+        {artwork.title}
+      </Text>
+
+      <Text
+        position={[0, -2.1, 0.12]}
+        fontSize={0.12}
+        color="white"
+        anchorX="center"
+        anchorY="middle"
+        maxWidth={2}
+      >
+        {artwork.artist} • {artwork.year}
+      </Text>
+    </group>
   )
 }

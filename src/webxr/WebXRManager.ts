@@ -10,19 +10,16 @@ export class WebXRManager {
   private lasers: Line[] = []
   private intersectables: Mesh[] = []
   private controllerModelFactory: XRControllerModelFactory
-  private onArtworkSelect?: (mesh: Mesh) => void
 
   constructor(renderer: WebGLRenderer, scene: Scene) {
     this.renderer = renderer
     this.scene = scene
     this.controllerModelFactory = new XRControllerModelFactory()
-    
+
     this.setupXR()
-    this.createTestObjects()
   }
 
   private setupXR() {
-    // Enable XR
     this.renderer.xr.enabled = true
     for (let i = 0; i < 2; i++) {
       this.setupController(i)
@@ -56,29 +53,19 @@ export class WebXRManager {
     return new Line(geometry, material)
   }
 
-  private createTestObjects() {
-    // Test objects removed - artwork interaction handled separately
-  }
-
   private onSelectStart(controllerIndex: number) {
     const laser = this.lasers[controllerIndex]
     if (laser) {
       ;(laser.material as LineBasicMaterial).color.setHex(0xff00ff)
     }
-    
+
     const raycaster = this.raycasters[controllerIndex]
     if (raycaster) {
       const intersects = raycaster.intersectObjects(this.intersectables)
-      console.log(`Controller ${controllerIndex} intersects:`, intersects.length, 'objects')
       if (intersects.length > 0) {
         const mesh = intersects[0].object as Mesh
-        console.log('Selected mesh userData:', mesh.userData)
         if (mesh.userData.onSelect) {
-          console.log('Calling onSelect for artwork:', mesh.userData.artwork?.title)
           mesh.userData.onSelect()
-        }
-        if (this.onArtworkSelect) {
-          this.onArtworkSelect(mesh)
         }
       }
     }
@@ -108,28 +95,34 @@ export class WebXRManager {
     raycaster.ray.direction.set(0, 0, -1).applyMatrix4(tempMatrix).sub(raycaster.ray.origin).normalize()
   }
 
-  public getIntersectables(): Mesh[] {
-    return this.intersectables
-  }
-
   public addIntersectable(mesh: Mesh) {
-    this.intersectables.push(mesh)
+    if (!this.intersectables.includes(mesh)) {
+      this.intersectables.push(mesh)
+    }
   }
 
-  public setArtworkSelectCallback(callback: (mesh: Mesh) => void) {
-    this.onArtworkSelect = callback
+  public removeIntersectable(mesh: Mesh) {
+    const index = this.intersectables.indexOf(mesh)
+    if (index !== -1) {
+      this.intersectables.splice(index, 1)
+    }
   }
 
   public dispose() {
-    this.controllers.forEach(controller => {
+    this.controllers.forEach((controller) => {
       if (controller) {
         this.scene.remove(controller)
       }
     })
-    this.controllerGrips.forEach(grip => {
+    this.controllerGrips.forEach((grip) => {
       if (grip) {
         this.scene.remove(grip)
       }
     })
+    this.controllers = []
+    this.controllerGrips = []
+    this.lasers = []
+    this.raycasters = []
+    this.intersectables = []
   }
 }

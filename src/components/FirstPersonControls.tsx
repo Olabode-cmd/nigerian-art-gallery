@@ -20,7 +20,7 @@ export default function FirstPersonControls() {
 
   useEffect(() => {
     camera.rotation.set(0, 0, 0)
-  }, [])
+  }, [camera])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -69,6 +69,11 @@ export default function FirstPersonControls() {
       camera.getWorldDirection(direction.current)
       direction.current.cross(camera.up)
       velocity.current.add(direction.current.multiplyScalar(moveSpeed * delta))
+    }
+
+    // Cap speed when moving diagonally (two keys at once)
+    if (velocity.current.length() > moveSpeed * delta) {
+      velocity.current.setLength(moveSpeed * delta)
     }
 
     // Calculate new position with collision detection

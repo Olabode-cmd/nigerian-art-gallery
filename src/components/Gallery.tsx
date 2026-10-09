@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { Suspense, useEffect } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import Room from './Room'
@@ -7,16 +7,14 @@ import NavigationSelector from './NavigationSelector'
 import LoadingScreen from './LoadingScreen'
 import { WebXRManager } from '../webxr/WebXRManager'
 import { VRButton } from '../webxr/VRButton'
-import { art } from '../data/art'
+import { useGallery } from '../store'
 
-function WebXRContent() {
+function GalleryScene() {
   const { gl, scene } = useThree()
-  const webxrManagerRef = useRef<WebXRManager | null>(null)
-  const vrButtonRef = useRef<VRButton | null>(null)
-  const [selectedArtwork, setSelectedArtwork] = useState<typeof art[0] | null>(null)
-  const [selectedArtworkPosition, setSelectedArtworkPosition] = useState<[number, number, number] | null>(null)
-  const [isMobile, setIsMobile] = useState(false)
-  const [navigationMode, setNavigationMode] = useState<'orbit' | 'wasd'>('orbit')
+  const isMobile = useGallery((state) => state.isMobile)
+  const navigationMode = useGallery((state) => state.navigationMode)
+  const setIsMobile = useGallery((state) => state.setIsMobile)
+  const setWebXRManager = useGallery((state) => state.setWebXRManager)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -24,67 +22,38 @@ function WebXRContent() {
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
-    
-    const savedMode = localStorage.getItem('navigationMode') as 'orbit' | 'wasd'
-    if (savedMode) {
-      setNavigationMode(savedMode)
-    }
-    
     return () => window.removeEventListener('resize', checkMobile)
-  }, [])
-  
+  }, [setIsMobile])
+
   useEffect(() => {
-    // Initialize WebXR manager
-    webxrManagerRef.current = new WebXRManager(gl, scene)
-    scene.userData.webxrManager = webxrManagerRef.current
-    webxrManagerRef.current.setArtworkSelectCallback((mesh) => {
-      const artworkData = mesh.userData.artwork
-      const position = mesh.userData.position
-      if (artworkData && position) {
-        handleArtworkClick(artworkData, position)
-      }
-    })
-    
-    vrButtonRef.current = new VRButton(gl)
+    const manager = new WebXRManager(gl, scene)
+    setWebXRManager(manager)
 
-    // Animation loop
+    const vrButton = new VRButton(gl)
+
     const animate = () => {
-      webxrManagerRef.current?.update()
+      manager.update()
     }
-
     gl.setAnimationLoop(animate)
 
     return () => {
       gl.setAnimationLoop(null)
-      webxrManagerRef.current?.dispose()
-      vrButtonRef.current?.dispose()
+      vrButton.dispose()
+      manager.dispose()
+      setWebXRManager(null)
     }
-  }, [gl, scene])
-
-  const handleArtworkClick = (artwork: typeof art[0], position: [number, number, number]) => {
-    setSelectedArtwork(artwork)
-    setSelectedArtworkPosition(position)
-  }
-
-  const handleCloseOverlay = () => {
-    setSelectedArtwork(null)
-    setSelectedArtworkPosition(null)
-  }
+  }, [gl, scene, setWebXRManager])
 
   return (
     <>
       <ambientLight intensity={0.8} />
+      <directionalLight position={[10, 10, 5]} intensity={1} />
       <Suspense fallback={null}>
-        <Room 
-          onArtworkClick={handleArtworkClick}
-          selectedArtwork={selectedArtwork}
-          selectedArtworkPosition={selectedArtworkPosition}
-          onClosePanel={handleCloseOverlay}
-        />
+        <Room />
       </Suspense>
-      
+
       {isMobile || navigationMode === 'orbit' ? (
-        <OrbitControls 
+        <OrbitControls
           enablePan={false}
           target={[0, 4, 0]}
           minPolarAngle={0}
@@ -99,21 +68,14 @@ function WebXRContent() {
   )
 }
 
-
-
 export default function Gallery() {
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
       <LoadingScreen />
-      <Canvas 
-        camera={{ position: [0, 5, 0], fov: 75 }}
-        onCreated={({ gl }) => {
-          gl.xr.enabled = true
-        }}
-      >
-        <WebXRContent />
+      <Canvas camera={{ position: [0, 5, 0], fov: 75 }}>
+        <GalleryScene />
       </Canvas>
-      <NavigationSelector isMobile={false} isVRActive={false} />
+      <NavigationSelector />
     </div>
   )
 }
