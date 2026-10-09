@@ -1,7 +1,13 @@
+import { createElement } from 'react'
+import { createRoot, type Root } from 'react-dom/client'
 import type { WebGLRenderer } from 'three'
+import { HugeiconsIcon } from '@hugeicons/react'
+import { VirtualRealityVr01Icon } from '@hugeicons/core-free-icons'
 
 export class VRButton {
   private button: HTMLButtonElement
+  private textSpan!: HTMLSpanElement
+  private iconRoot: Root | null = null
   private renderer: WebGLRenderer
 
   constructor(renderer: WebGLRenderer) {
@@ -17,6 +23,9 @@ export class VRButton {
       top: 16px;
       right: 16px;
       z-index: 1001;
+      display: flex;
+      align-items: center;
+      gap: 8px;
       padding: 12px 20px;
       background-color: #007bff;
       color: white;
@@ -27,9 +36,31 @@ export class VRButton {
       font-weight: bold;
       font-family: Arial, sans-serif;
     `
-    button.textContent = 'Enter VR'
+
+    const iconSpan = document.createElement('span')
+    iconSpan.style.display = 'flex'
+
+    this.textSpan = document.createElement('span')
+    this.textSpan.textContent = 'Enter VR'
+
+    button.append(iconSpan, this.textSpan)
     document.body.appendChild(button)
+
+    this.iconRoot = createRoot(iconSpan)
+    this.iconRoot.render(
+      createElement(HugeiconsIcon, {
+        icon: VirtualRealityVr01Icon,
+        size: 16,
+        color: 'white',
+        strokeWidth: 1.8
+      })
+    )
+
     return button
+  }
+
+  private setText(text: string) {
+    this.textSpan.textContent = text
   }
 
   private onButtonClick = () => {
@@ -41,12 +72,12 @@ export class VRButton {
   }
 
   private onSessionStart = () => {
-    this.button.textContent = 'Exit VR'
+    this.setText('Exit VR')
     this.button.style.backgroundColor = '#dc3545'
   }
 
   private onSessionEnd = () => {
-    this.button.textContent = 'Enter VR'
+    this.setText('Enter VR')
     this.button.style.backgroundColor = '#007bff'
   }
 
@@ -90,6 +121,8 @@ export class VRButton {
     this.button.removeEventListener('click', this.onButtonClick)
     this.renderer.xr.removeEventListener('sessionstart', this.onSessionStart)
     this.renderer.xr.removeEventListener('sessionend', this.onSessionEnd)
+    this.iconRoot?.unmount()
+    this.iconRoot = null
     if (this.button.parentNode) {
       this.button.parentNode.removeChild(this.button)
     }
