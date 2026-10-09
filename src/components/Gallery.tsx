@@ -1,8 +1,11 @@
 import { Suspense, useEffect, useRef } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
+import type { Group } from 'three'
 import Room from './Room'
-import FirstPersonControls from './FirstPersonControls'
+import Avatar, { HEAD_Y } from './Avatar'
+import AvatarControls from './AvatarControls'
 import NavigationSelector from './NavigationSelector'
 import LoadingScreen from './LoadingScreen'
 import { WebXRManager } from '../webxr/WebXRManager'
@@ -10,8 +13,10 @@ import { VRButton } from '../webxr/VRButton'
 import { useGallery } from '../store'
 
 function GalleryScene() {
-  const { gl, scene } = useThree()
+  const { gl, scene, camera } = useThree()
   const managerRef = useRef<WebXRManager | null>(null)
+  const avatarRef = useRef<Group>(null)
+  const controlsRef = useRef<OrbitControlsImpl>(null)
   const isMobile = useGallery((state) => state.isMobile)
   const navigationMode = useGallery((state) => state.navigationMode)
   const setIsMobile = useGallery((state) => state.setIsMobile)
@@ -25,6 +30,14 @@ function GalleryScene() {
     window.addEventListener('resize', checkMobile)
     return () => window.removeEventListener('resize', checkMobile)
   }, [setIsMobile])
+
+  // When entering orbit mode the camera may be sitting at the avatar's head
+  // (radius ~0 for OrbitControls), so back it out to a natural viewing spot
+  useEffect(() => {
+    if (navigationMode === 'orbit') {
+      camera.position.set(0, 5, 8)
+    }
+  }, [navigationMode, camera])
 
   useEffect(() => {
     const manager = new WebXRManager(gl, scene)
@@ -54,18 +67,22 @@ function GalleryScene() {
         <Room />
       </Suspense>
 
+      <Avatar ref={avatarRef} />
+      <AvatarControls avatarRef={avatarRef} controlsRef={controlsRef} />
+
       {isMobile || navigationMode === 'orbit' ? (
         <OrbitControls
+          ref={controlsRef}
           enablePan={false}
-          target={[0, 4, 0]}
+          enableDamping
+          dampingFactor={0.08}
+          target={[0, HEAD_Y, 0]}
           minPolarAngle={0}
           maxPolarAngle={Math.PI / 2.2}
           minDistance={1}
           maxDistance={15}
         />
-      ) : (
-        <FirstPersonControls />
-      )}
+      ) : null}
     </>
   )
 }

@@ -4,6 +4,8 @@ export default function NavigationSelector() {
   const isMobile = useGallery((state) => state.isMobile)
   const currentMode = useGallery((state) => state.navigationMode)
   const setNavigationMode = useGallery((state) => state.setNavigationMode)
+  const cameraView = useGallery((state) => state.cameraView)
+  const setCameraView = useGallery((state) => state.setCameraView)
 
   const handleModeChange = (mode: 'orbit' | 'wasd') => {
     if (mode !== currentMode) {
@@ -57,6 +59,22 @@ export default function NavigationSelector() {
           >
             WASD
           </button>
+          {currentMode === 'wasd' && (
+            <button
+              onClick={() => setCameraView(cameraView === 'first' ? 'third' : 'first')}
+              style={{
+                padding: '4px 12px',
+                borderRadius: '4px',
+                fontSize: '14px',
+                border: 'none',
+                cursor: 'pointer',
+                backgroundColor: cameraView === 'third' ? '#7c3aed' : '#4b5563',
+                color: cameraView === 'third' ? 'white' : '#d1d5db'
+              }}
+            >
+              {cameraView === 'third' ? '3rd Person' : '1st Person'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -78,7 +96,12 @@ export default function NavigationSelector() {
             <div style={{ marginBottom: '4px' }}><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>A</span> Strafe Left</div>
             <div style={{ marginBottom: '4px' }}><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>D</span> Strafe Right</div>
             <div style={{ marginBottom: '4px' }}><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>Q</span> Turn Left</div>
-            <div><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>E</span> Turn Right</div>
+            <div style={{ marginBottom: '4px' }}><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>E</span> Turn Right</div>
+            <div style={{ marginBottom: '4px' }}><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>↑</span> Move Forward</div>
+            <div style={{ marginBottom: '4px' }}><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>↓</span> Move Backward</div>
+            <div style={{ marginBottom: '4px' }}><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>←</span> Turn Left</div>
+            <div style={{ marginBottom: '4px' }}><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>→</span> Turn Right</div>
+            <div><span style={{ fontFamily: 'monospace', backgroundColor: '#374151', padding: '2px 4px', borderRadius: '2px' }}>C</span> Switch Camera</div>
           </div>
         </div>
       )}
