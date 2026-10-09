@@ -21,6 +21,10 @@ export class WebXRManager {
 
   private setupXR() {
     this.renderer.xr.enabled = true
+    // Quest supports foveated rendering (0 = off, 2 = max); other devices ignore it
+    this.renderer.xr.setFoveation(2)
+    // Render XR at 80% resolution — the standard Quest performance tradeoff
+    this.renderer.xr.setFramebufferScaleFactor(0.8)
     for (let i = 0; i < 2; i++) {
       this.setupController(i)
     }
