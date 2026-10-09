@@ -31,7 +31,17 @@ export default function LoadingScreen() {
       transition: 'opacity 0.5s ease-out',
       pointerEvents: progress === 100 ? 'none' : 'auto'
     }}>
-      <h1 style={{ color: '#fff', marginBottom: '2rem', fontSize: '2rem' }}>
+      <img
+        src="/nigerian-flag.png"
+        alt="Flag of Nigeria"
+        style={{
+          width: '120px',
+          height: 'auto',
+          borderRadius: '10px',
+          marginBottom: '1.75rem'
+        }}
+      />
+      <h1 style={{ color: '#fff', marginBottom: '2rem', fontSize: '2rem', fontWeight: 700 }}>
         Nigerian Art Gallery
       </h1>
       <div style={{

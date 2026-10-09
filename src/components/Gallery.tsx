@@ -1,5 +1,5 @@
-import { Suspense, useEffect } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Suspense, useEffect, useRef } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import Room from './Room'
 import FirstPersonControls from './FirstPersonControls'
@@ -11,6 +11,7 @@ import { useGallery } from '../store'
 
 function GalleryScene() {
   const { gl, scene } = useThree()
+  const managerRef = useRef<WebXRManager | null>(null)
   const isMobile = useGallery((state) => state.isMobile)
   const navigationMode = useGallery((state) => state.navigationMode)
   const setIsMobile = useGallery((state) => state.setIsMobile)
@@ -27,22 +28,23 @@ function GalleryScene() {
 
   useEffect(() => {
     const manager = new WebXRManager(gl, scene)
+    managerRef.current = manager
     setWebXRManager(manager)
 
     const vrButton = new VRButton(gl)
 
-    const animate = () => {
-      manager.update()
-    }
-    gl.setAnimationLoop(animate)
-
     return () => {
-      gl.setAnimationLoop(null)
       vrButton.dispose()
       manager.dispose()
+      managerRef.current = null
       setWebXRManager(null)
     }
   }, [gl, scene, setWebXRManager])
+
+  // R3F owns the render loop; this keeps the WebXR raycasters in sync per frame
+  useFrame(() => {
+    managerRef.current?.update()
+  })
 
   return (
     <>
@@ -72,7 +74,11 @@ export default function Gallery() {
   return (
     <div style={{ width: '100vw', height: '100vh' }}>
       <LoadingScreen />
-      <Canvas camera={{ position: [0, 5, 0], fov: 75 }}>
+      <Canvas
+        camera={{ position: [0, 5, 0], fov: 75 }}
+        dpr={[1, 1.5]}
+        gl={{ powerPreference: 'high-performance', antialias: false }}
+      >
         <GalleryScene />
       </Canvas>
       <NavigationSelector />
