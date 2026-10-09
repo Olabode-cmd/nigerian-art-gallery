@@ -1,28 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useGallery } from '../store'
 
-interface NavigationSelectorProps {
-  isMobile: boolean
-  isVRActive?: boolean
-}
-
-export default function NavigationSelector({ isMobile, isVRActive = false }: NavigationSelectorProps) {
-  const [currentMode, setCurrentMode] = useState<'orbit' | 'wasd'>('wasd')
-
-  useEffect(() => {
-    const saved = localStorage.getItem('navigationMode') as 'orbit' | 'wasd'
-    if (saved) {
-      setCurrentMode(saved)
-    }
-  }, [])
+export default function NavigationSelector() {
+  const isMobile = useGallery((state) => state.isMobile)
+  const currentMode = useGallery((state) => state.navigationMode)
+  const setNavigationMode = useGallery((state) => state.setNavigationMode)
 
   const handleModeChange = (mode: 'orbit' | 'wasd') => {
     if (mode !== currentMode) {
-      localStorage.setItem('navigationMode', mode)
-      window.location.reload()
+      setNavigationMode(mode)
     }
   }
 
-  if (isMobile || isVRActive) {
+  if (isMobile) {
     return null
   }
 
@@ -70,7 +59,7 @@ export default function NavigationSelector({ isMobile, isVRActive = false }: Nav
           </button>
         </div>
       </div>
-      
+
       {currentMode === 'wasd' && (
         <div style={{
           position: 'fixed',

@@ -1,16 +1,15 @@
 # Nigerian Art Gallery - WebXR Experience
 
-An immersive 3D virtual gallery showcasing Nigerian art and cultural heritage, built with React Three Fiber and WebXR technologies.
+An immersive 3D virtual gallery showcasing Nigerian art and cultural heritage, built with React Three Fiber and WebXR.
 
 ## 🎨 Features
 
-- **3D Virtual Gallery**: Explore a beautifully designed square gallery room with realistic textures
-- **Interactive Artwork**: Click on any of the 16 featured Nigerian artworks to learn more
-- **Floating Information Panels**: 3D information displays that appear contextually near clicked artworks
-- **Realistic Environment**: Stone tile walls, wood floors, marble columns, and decorative elements
-- **Cultural Education**: Rich descriptions and historical stories for each artwork
+- **3D Virtual Gallery**: Explore a square gallery room with textured walls, floor, and ceiling
+- **Interactive Artwork**: Click (or VR-select) any of the 16 featured artworks to learn more
+- **Floating Information Panels**: 3D information panels appear near the selected artwork
+- **Desktop Navigation**: Switch between orbit mode and WASD first-person mode without reloading
+- **WebXR / VR**: Enter immersive VR on supported headsets and select artworks with controllers
 - **Responsive Design**: Works on desktop and mobile devices
-- **WebXR Ready**: Built for future VR/AR experiences
 
 ## 🖼️ Art Collection
 
@@ -21,24 +20,23 @@ The gallery features 16 significant pieces of Nigerian art spanning centuries:
 - Traditional masks and ceremonial objects
 - Contemporary works by renowned artists like Ben Enwonwu
 
-Each piece includes detailed historical context, cultural significance, and artistic analysis.
+Each piece includes historical context, cultural significance, and artistic analysis.
 
 ## 🛠️ Technology Stack
 
-- **React 18** - UI framework
+- **React 19** - UI framework
 - **TypeScript** - Type safety
 - **Three.js** - 3D graphics
 - **React Three Fiber** - React renderer for Three.js
-- **React Three Drei** - Useful helpers and abstractions
+- **React Three Drei** - Helpers and abstractions
+- **Zustand** - Application state (selected artwork, navigation mode, WebXR manager)
 - **Vite** - Build tool and dev server
-- **Tailwind CSS** - Styling (for overlays)
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 16+ 
-- npm or yarn
+- Node.js 18+ and [Bun](https://bun.sh) (or npm)
 
 ### Installation
 
@@ -50,73 +48,74 @@ cd nigerian-art-gallery
 
 2. Install dependencies:
 ```bash
-npm install
+bun install
 ```
 
 3. Start the development server:
 ```bash
-npm run dev
+bun run dev
 ```
 
-4. Open your browser and navigate to `http://localhost:5173`
+4. Open your browser at `http://localhost:5173`
 
 ## 🎮 How to Use
 
-1. **Navigate**: Use mouse to orbit around the gallery, scroll to zoom in/out
-2. **Explore**: Walk through the square gallery room with artwork on all four walls
-3. **Learn**: Click on any artwork to see detailed information in a floating 3D panel
-4. **Close**: Click the red × button or anywhere on the panel to close information displays
+1. **Navigate**: Orbit mode uses the mouse; WASD mode uses `W/A/S/D` to move and `Q/E` to turn
+2. **Switch modes**: Use the Orbit/WASD buttons in the top-left corner (desktop only)
+3. **Learn**: Click any artwork to see details in a floating 3D panel; click the red × or the panel to close
+4. **VR**: On a WebXR-capable device, use the "Enter VR" button; point with the controller laser and pull the trigger to select artwork
 
 ## 📁 Project Structure
 
 ```
 src/
 ├── components/
-│   ├── Gallery.tsx          # Main gallery component
-│   ├── Room.tsx             # 3D room with walls, floor, ceiling
-│   ├── ArtPiece.tsx         # Individual artwork display
-│   ├── FloatingInfoPanel.tsx # 3D information panels
-│   └── ArtworkOverlay.tsx   # Alternative 2D overlay (unused)
+│   ├── Gallery.tsx            # Root gallery: canvas, lighting, controls, WebXR setup
+│   ├── Room.tsx               # 3D room, textures, artwork layout
+│   ├── ArtPiece.tsx           # Individual artwork display and interaction
+│   ├── FloatingInfoPanel.tsx  # 3D information panel for the selected artwork
+│   ├── LazyDecorations.tsx    # Lazily loaded decorative models
+│   ├── NavigationSelector.tsx # Desktop navigation mode switcher
+│   ├── FirstPersonControls.tsx # WASD + Q/E first-person controls
+│   └── LoadingScreen.tsx      # Loading progress overlay
+├── hooks/
+│   ├── useOptimizedTexture.ts # Texture loading with tiling
+│   └── useIntersectable.ts    # Registers meshes for VR controller selection
+├── webxr/
+│   ├── WebXRManager.ts        # VR session, controllers, laser raycasting
+│   └── VRButton.ts            # Enter/exit VR button
 ├── data/
-│   └── art.ts               # Artwork data and descriptions
-├── assets/
-│   ├── images/              # Artwork images
-│   └── models/              # 3D models and textures
-└── App.tsx                  # Root component
+│   └── art.ts                 # Artwork data and descriptions
+├── store.ts                   # Zustand store shared by all components
+└── App.tsx                    # Root component
 ```
 
 ## 🎨 Assets
 
 ### 3D Models
-- Decorative vase, plants, sculptures for ambiance
+- Decorative vase, plant, and sculpture for ambiance
 - Ceiling light fixture
-- Various furniture pieces (some commented out)
 
 ### Textures
-- **Floor**: Wood planks with displacement mapping
-- **Walls**: Stone tile texture with normal mapping  
-- **Ceiling**: Ornate interior ceiling pattern
-- **Columns**: Marble mosaic tiles
+- **Floor**: Wood planks (2K diffuse)
+- **Walls**: Stone tile (1K diffuse)
+- **Ceiling**: Ornate interior pattern (1K diffuse)
+- **Columns**: Marble mosaic tiles (1K diffuse)
 
 ### Artwork Images
-High-quality images of 16 Nigerian artworks with proper attribution.
+High-quality images of 16 Nigerian artworks with proper attribution, in `public/images/`.
 
 ## 🔧 Customization
 
 ### Adding New Artwork
 1. Add artwork data to `src/data/art.ts`
-2. Place artwork image in `src/assets/images/`
+2. Place the artwork image in `public/images/`
 3. The gallery automatically arranges 4 artworks per wall
 
 ### Modifying the Room
 - Adjust `roomSize` in `Room.tsx` to change gallery dimensions
-- Modify textures by updating texture paths
-- Add/remove decorative elements in the Room component
-
-### Styling Information Panels
-- Customize panel appearance in `FloatingInfoPanel.tsx`
-- Adjust text sizes, colors, and layout
-- Modify panel positioning and rotation logic
+- Modify texture paths in `Room.tsx`
+- Add/remove decorative elements in `LazyDecorations.tsx`
 
 ## 🌐 Browser Support
 
@@ -127,38 +126,24 @@ High-quality images of 16 Nigerian artworks with proper attribution.
 
 WebXR features require compatible browsers and devices.
 
-## 📱 Mobile Support
-
-The gallery is optimized for mobile devices with touch controls for navigation and artwork interaction.
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License.
 
 ## 🙏 Acknowledgments
 
 - Nigerian cultural institutions for artwork documentation
-- Three.js and React Three Fiber communities
+- Three and React Three Fiber communities
 - Texture and 3D model contributors
 - Cultural historians and art experts who provided artwork descriptions
 
 ## 🔮 Future Enhancements
 
-- VR/AR support with WebXR
 - Audio narration for artworks
 - Virtual guided tours
+- Multi-user / social features
 - Multi-language support
-- Social sharing features
 - Additional gallery rooms
-- Interactive timeline of Nigerian art history
 
 ---
 
