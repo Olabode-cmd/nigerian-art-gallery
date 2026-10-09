@@ -3,7 +3,7 @@ import { Text } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import { Group } from 'three'
 import { useGallery } from '../store'
-import { FONT_BOLD, FONT_MEDIUM, FONT_REGULAR } from '../fonts'
+import { FONT_BOLD, FONT_REGULAR } from '../fonts'
 
 export default function FloatingInfoPanel() {
   const floatRef = useRef<Group>(null)
@@ -39,11 +39,7 @@ export default function FloatingInfoPanel() {
         {/* Background */}
         <mesh onClick={onClose}>
           <boxGeometry args={[4, 3.2, 0.12]} />
-          <meshLambertMaterial
-            color="#222226"
-            transparent
-            opacity={0.95}
-          />
+          <meshLambertMaterial color="#222226" />
         </mesh>
 
         {/* Close Button */}
@@ -78,7 +74,7 @@ export default function FloatingInfoPanel() {
 
         {/* Artist and Year */}
         <Text
-          font={FONT_MEDIUM}
+          font={FONT_BOLD}
           position={[0, 0.72, 0.07]}
           fontSize={0.12}
           color="#cccccc"
