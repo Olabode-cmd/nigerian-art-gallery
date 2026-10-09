@@ -1,10 +1,9 @@
 import { useRef } from 'react'
 import { useLoader } from '@react-three/fiber'
 import { TextureLoader, Mesh } from 'three'
-import { Text } from '@react-three/drei'
 import { useIntersectable } from '../hooks/useIntersectable'
+import { useLabelTexture } from '../hooks/useLabelTexture'
 import type { Artwork } from '../data/art'
-import { FONT_BOLD, FONT_REGULAR } from '../fonts'
 
 interface ArtPieceProps {
   artwork: Artwork
@@ -18,6 +17,8 @@ export default function ArtPiece({ artwork, position, rotation, onSelect }: ArtP
 
   const texture = useLoader(TextureLoader, artwork.image)
   texture.anisotropy = 4
+
+  const labelTexture = useLabelTexture(artwork.title, `${artwork.artist} • ${artwork.year}`)
 
   // Register the artwork mesh for VR controller selection. Being part of the
   // rotated group, it inherits the wall orientation — one hitbox for all walls.
@@ -36,29 +37,11 @@ export default function ArtPiece({ artwork, position, rotation, onSelect }: ArtP
         <meshStandardMaterial map={texture} />
       </mesh>
 
-      <Text
-        font={FONT_BOLD}
-        position={[0, -1.8, 0.12]}
-        fontSize={0.15}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={2}
-      >
-        {artwork.title}
-      </Text>
-
-      <Text
-        font={FONT_REGULAR}
-        position={[0, -2.1, 0.12]}
-        fontSize={0.12}
-        color="white"
-        anchorX="center"
-        anchorY="middle"
-        maxWidth={2}
-      >
-        {artwork.artist} • {artwork.year}
-      </Text>
+      {/* Baked title/artist label — no troika text cost */}
+      <mesh position={[0, -1.95, 0.13]}>
+        <planeGeometry args={[2, 1]} />
+        <meshBasicMaterial map={labelTexture} transparent />
+      </mesh>
     </group>
   )
 }
