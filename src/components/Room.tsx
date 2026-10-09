@@ -6,6 +6,7 @@ import LazyDecorations from './LazyDecorations'
 import { art } from '../data/art'
 import { useOptimizedTexture } from '../hooks/useOptimizedTexture'
 import { useGallery, type Vec3 } from '../store'
+import { FONT_BOLD, FONT_REGULAR } from '../fonts'
 
 // Stable identities so the texture hook's memo doesn't invalidate every render
 const FLOOR_REPEAT: [number, number] = [4, 4]
@@ -99,6 +100,7 @@ export default function Room() {
           <meshStandardMaterial color="#333333" />
         </mesh>
         <Text
+          font={FONT_BOLD}
           position={[0, 0.4, 0.06]}
           fontSize={0.25}
           color="white"
@@ -109,6 +111,7 @@ export default function Room() {
           Click on any artwork to learn more
         </Text>
         <Text
+          font={FONT_REGULAR}
           position={[0, -0.2, 0.06]}
           fontSize={0.15}
           color="#cccccc"
@@ -119,6 +122,7 @@ export default function Room() {
           contact developer: olabodebalogun80@gmail.com
         </Text>
         <Text
+          font={FONT_REGULAR}
           position={[0, -0.5, 0.06]}
           fontSize={0.15}
           color="#cccccc"

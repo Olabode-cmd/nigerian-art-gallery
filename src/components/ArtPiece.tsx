@@ -4,6 +4,7 @@ import { TextureLoader, Mesh } from 'three'
 import { Text } from '@react-three/drei'
 import { useIntersectable } from '../hooks/useIntersectable'
 import type { Artwork } from '../data/art'
+import { FONT_BOLD, FONT_REGULAR } from '../fonts'
 
 interface ArtPieceProps {
   artwork: Artwork
@@ -41,6 +42,7 @@ export default function ArtPiece({ artwork, position, rotation, onSelect }: ArtP
       </mesh>
 
       <Text
+        font={FONT_BOLD}
         position={[0, -1.8, 0.12]}
         fontSize={0.15}
         color="white"
@@ -52,6 +54,7 @@ export default function ArtPiece({ artwork, position, rotation, onSelect }: ArtP
       </Text>
 
       <Text
+        font={FONT_REGULAR}
         position={[0, -2.1, 0.12]}
         fontSize={0.12}
         color="white"
