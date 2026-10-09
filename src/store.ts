@@ -3,6 +3,7 @@ import type { WebXRManager } from './webxr/WebXRManager'
 import type { Artwork } from './data/art'
 
 export type NavigationMode = 'orbit' | 'wasd'
+export type CameraView = 'first' | 'third'
 export type Vec3 = [number, number, number]
 
 const NAVIGATION_MODE_KEY = 'navigationMode'
@@ -21,11 +22,13 @@ interface GalleryState {
   selectedPosition: Vec3 | null
   isMobile: boolean
   navigationMode: NavigationMode
+  cameraView: CameraView
   setWebXRManager: (manager: WebXRManager | null) => void
   selectArtwork: (artwork: Artwork, position: Vec3) => void
   closePanel: () => void
   setNavigationMode: (mode: NavigationMode) => void
   setIsMobile: (isMobile: boolean) => void
+  setCameraView: (view: CameraView) => void
 }
 
 export const useGallery = create<GalleryState>()((set) => ({
@@ -34,6 +37,7 @@ export const useGallery = create<GalleryState>()((set) => ({
   selectedPosition: null,
   isMobile: false,
   navigationMode: readStoredNavigationMode(),
+  cameraView: 'first',
   setWebXRManager: (manager) => set({ webxrManager: manager }),
   selectArtwork: (artwork, position) =>
     set({ selectedArtwork: artwork, selectedPosition: position }),
@@ -47,4 +51,5 @@ export const useGallery = create<GalleryState>()((set) => ({
     }
   },
   setIsMobile: (isMobile) => set({ isMobile }),
+  setCameraView: (cameraView) => set({ cameraView }),
 }))
