@@ -25,11 +25,6 @@ export default function ArtPiece({ artwork, position, rotation, onSelect }: ArtP
 
   return (
     <group position={position} rotation={rotation}>
-      <mesh position={[0, 0, 0.05]}>
-        <boxGeometry args={[2.2, 2.8, 0.1]} />
-        <meshStandardMaterial color="#8B4513" />
-      </mesh>
-
       <mesh
         ref={meshRef}
         position={[0, 0, 0.11]}

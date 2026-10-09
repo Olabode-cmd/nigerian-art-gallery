@@ -39,19 +39,17 @@ export default function FloatingInfoPanel() {
         {/* Background */}
         <mesh onClick={onClose}>
           <boxGeometry args={[4, 3.2, 0.12]} />
-          <meshStandardMaterial
+          <meshLambertMaterial
             color="#222226"
             transparent
             opacity={0.95}
-            roughness={0.3}
-            metalness={0.1}
           />
         </mesh>
 
         {/* Close Button */}
         <mesh position={[1.72, 1.42, 0.07]} onClick={onClose}>
           <circleGeometry args={[0.15, 16]} />
-          <meshStandardMaterial color="#ff4444" />
+          <meshLambertMaterial color="#ff4444" />
         </mesh>
 
         <Text
