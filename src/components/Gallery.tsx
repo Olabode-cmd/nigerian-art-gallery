@@ -10,13 +10,15 @@ import NavigationSelector from './NavigationSelector'
 import LoadingScreen from './LoadingScreen'
 import { WebXRManager } from '../webxr/WebXRManager'
 import { VRButton } from '../webxr/VRButton'
-import { useGallery } from '../store'
+import { useGallery, detectIsMobile } from '../store'
+import TouchControls from './TouchControls'
 
 function GalleryScene() {
   const { gl, scene, camera } = useThree()
   const managerRef = useRef<WebXRManager | null>(null)
   const avatarRef = useRef<Group>(null)
   const controlsRef = useRef<OrbitControlsImpl>(null)
+  const speedRef = useRef(0)
   const isMobile = useGallery((state) => state.isMobile)
   const navigationMode = useGallery((state) => state.navigationMode)
   const setIsMobile = useGallery((state) => state.setIsMobile)
@@ -24,7 +26,7 @@ function GalleryScene() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window)
+      setIsMobile(detectIsMobile())
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -67,8 +69,8 @@ function GalleryScene() {
         <Room />
       </Suspense>
 
-      <Avatar ref={avatarRef} />
-      <AvatarControls avatarRef={avatarRef} controlsRef={controlsRef} />
+      <Avatar ref={avatarRef} speed={speedRef} />
+      <AvatarControls avatarRef={avatarRef} controlsRef={controlsRef} speedRef={speedRef} />
 
       {isMobile || navigationMode === 'orbit' ? (
         <OrbitControls
@@ -99,6 +101,7 @@ export default function Gallery() {
         <GalleryScene />
       </Canvas>
       <NavigationSelector />
+      <TouchControls />
     </div>
   )
 }

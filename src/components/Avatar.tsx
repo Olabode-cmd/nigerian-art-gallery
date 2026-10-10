@@ -1,50 +1,155 @@
-import { forwardRef } from 'react'
+import { forwardRef, useEffect, useMemo, useRef } from 'react'
+import type { MutableRefObject } from 'react'
+import { useFrame } from '@react-three/fiber'
+import { MathUtils, MeshLambertMaterial } from 'three'
 import type { Group } from 'three'
 
-// Eye level of the avatar — matches the room's oversized scale (artwork
-// centers sit at y=5, so a ~5-unit-tall character reads correctly in it)
+// The model faces -Z to match the movement/camera convention in AvatarControls
+// (forward = -Z, so third-person cameras behind at +Z see the back of the head)
 export const HEAD_Y = 4.3
 
-const Avatar = forwardRef<Group>((_, ref) => {
-  return (
-    <group ref={ref} position={[0, 0, 0]}>
-      {/* Legs */}
-      <mesh position={[-0.24, 0.6, 0]}>
-        <boxGeometry args={[0.32, 1.2, 0.36]} />
-        <meshLambertMaterial color="#20242e" />
-      </mesh>
-      <mesh position={[0.24, 0.6, 0]}>
-        <boxGeometry args={[0.32, 1.2, 0.36]} />
-        <meshLambertMaterial color="#20242e" />
-      </mesh>
+type Props = {
+  /** 0 = idle, 1 = full walk. Drive from movement speed. */
+  speed?: MutableRefObject<number>
+  skin?: string
+  shirt?: string
+  pants?: string
+  hair?: string
+}
 
-      {/* Torso */}
-      <mesh position={[0, 2.3, 0]}>
-        <capsuleGeometry args={[0.45, 1.2, 8, 16]} />
-        <meshLambertMaterial color="#1e3a5f" />
-      </mesh>
+const Avatar = forwardRef<Group, Props>(
+  ({ speed, skin = '#e8c9a0', shirt = '#1e3a5f', pants = '#20242e', hair = '#15110e' }, ref) => {
+    const mats = useMemo(
+      () => ({
+        skin: new MeshLambertMaterial({ color: skin }),
+        shirt: new MeshLambertMaterial({ color: shirt }),
+        pants: new MeshLambertMaterial({ color: pants }),
+        hair: new MeshLambertMaterial({ color: hair }),
+        shoe: new MeshLambertMaterial({ color: '#0d0d0f' }),
+        sash: new MeshLambertMaterial({ color: '#1f8a4c' }),
+        white: new MeshLambertMaterial({ color: '#f4f4f4' }),
+        dark: new MeshLambertMaterial({ color: '#111' }),
+      }),
+      [skin, shirt, pants, hair]
+    )
 
-      {/* Green sash — Nigerian flag accent */}
-      <mesh position={[0, 2.6, 0.47]}>
-        <boxGeometry args={[0.1, 0.9, 0.08]} />
-        <meshLambertMaterial color="#1f8a4c" />
-      </mesh>
+    // R3F doesn't auto-dispose materials passed as objects
+    useEffect(() => {
+      return () => {
+        Object.values(mats).forEach((material) => material.dispose())
+      }
+    }, [mats])
 
-      {/* Neck */}
-      <mesh position={[0, 3.5, 0]}>
-        <cylinderGeometry args={[0.22, 0.26, 0.35, 12]} />
-        <meshLambertMaterial color="#c99b70" />
-      </mesh>
+    const lLeg = useRef<Group>(null)
+    const rLeg = useRef<Group>(null)
+    const lArm = useRef<Group>(null)
+    const rArm = useRef<Group>(null)
+    const body = useRef<Group>(null)
+    const phase = useRef(0)
+    const amp = useRef(0)
 
-      {/* Head */}
-      <mesh position={[0, 4.15, 0]}>
-        <sphereGeometry args={[0.42, 24, 24]} />
-        <meshLambertMaterial color="#e8c9a0" />
-      </mesh>
-    </group>
-  )
-})
+    useFrame((state, dt) => {
+      const target = speed?.current ?? 0
+      amp.current = MathUtils.damp(amp.current, target, 10, dt)
+      phase.current += dt * (4 + 6 * amp.current)
+
+      const swing = Math.sin(phase.current) * 0.7 * amp.current
+      if (lLeg.current) lLeg.current.rotation.x = swing
+      if (rLeg.current) rLeg.current.rotation.x = -swing
+      if (lArm.current) lArm.current.rotation.x = -swing * 0.8
+      if (rArm.current) rArm.current.rotation.x = swing * 0.8
+
+      // idle breathing + walk bob
+      if (body.current) {
+        const t = state.clock.elapsedTime
+        body.current.position.y =
+          Math.abs(Math.sin(phase.current)) * 0.08 * amp.current +
+          Math.sin(t * 1.6) * 0.015 * (1 - amp.current)
+      }
+    })
+
+    return (
+      <group ref={ref}>
+        {/* Legs: pivot at hip */}
+        {[-0.24, 0.24].map((x, i) => (
+          <group key={x} ref={i === 0 ? lLeg : rLeg} position={[x, 1.25, 0]}>
+            <mesh position={[0, -0.55, 0]} material={mats.pants}>
+              <capsuleGeometry args={[0.16, 0.8, 6, 12]} />
+            </mesh>
+            <mesh position={[0, -1.17, -0.08]} material={mats.shoe}>
+              <boxGeometry args={[0.32, 0.16, 0.56]} />
+            </mesh>
+          </group>
+        ))}
+
+        <group ref={body}>
+          {/* Torso, flattened front to back */}
+          <mesh position={[0, 2.3, 0]} scale={[1, 1, 0.7]} material={mats.shirt}>
+            <capsuleGeometry args={[0.45, 1.2, 8, 16]} />
+          </mesh>
+
+          {/* Sash */}
+          <mesh position={[0, 2.6, -0.33]} rotation={[0, 0, 0.35]} material={mats.sash}>
+            <boxGeometry args={[0.1, 1.0, 0.06]} />
+          </mesh>
+
+          {/* Arms: pivot at shoulder */}
+          {[-0.62, 0.62].map((x, i) => (
+            <group key={x} ref={i === 0 ? lArm : rArm} position={[x, 3.0, 0]}>
+              <mesh position={[0, -0.5, 0]} material={mats.shirt}>
+                <capsuleGeometry args={[0.12, 0.7, 6, 12]} />
+              </mesh>
+              <mesh position={[0, -1.1, 0]} material={mats.skin}>
+                <sphereGeometry args={[0.14, 12, 12]} />
+              </mesh>
+            </group>
+          ))}
+
+          {/* Neck */}
+          <mesh position={[0, 3.5, 0]} material={mats.skin}>
+            <cylinderGeometry args={[0.2, 0.24, 0.35, 12]} />
+          </mesh>
+
+          {/* Head, slightly egg-shaped */}
+          <group position={[0, 4.15, 0]}>
+            <mesh scale={[1, 1.1, 1]} material={mats.skin}>
+              <sphereGeometry args={[0.42, 24, 24]} />
+            </mesh>
+
+            {/* Hair cap */}
+            <mesh position={[0, 0.04, 0.03]} rotation={[0.25, 0, 0]} material={mats.hair}>
+              <sphereGeometry args={[0.45, 24, 24, 0, Math.PI * 2, 0, Math.PI * 0.55]} />
+            </mesh>
+
+            {/* Ears */}
+            {[-0.42, 0.42].map((x) => (
+              <mesh key={x} position={[x, 0, 0]} scale={[0.5, 1, 0.8]} material={mats.skin}>
+                <sphereGeometry args={[0.08, 8, 8]} />
+              </mesh>
+            ))}
+
+            {/* Eyes */}
+            {[-0.15, 0.15].map((x) => (
+              <group key={x} position={[x, 0.07, -0.35]}>
+                <mesh material={mats.white}>
+                  <sphereGeometry args={[0.07, 12, 12]} />
+                </mesh>
+                <mesh position={[0, 0, -0.055]} material={mats.dark}>
+                  <sphereGeometry args={[0.035, 8, 8]} />
+                </mesh>
+              </group>
+            ))}
+
+            {/* Nose */}
+            <mesh position={[0, -0.04, -0.42]} scale={[0.8, 1, 1]} material={mats.skin}>
+              <sphereGeometry args={[0.06, 10, 10]} />
+            </mesh>
+          </group>
+        </group>
+      </group>
+    )
+  }
+)
 
 Avatar.displayName = 'Avatar'
-
 export default Avatar

@@ -8,12 +8,32 @@ export type Vec3 = [number, number, number]
 
 const NAVIGATION_MODE_KEY = 'navigationMode'
 
+
+
+export function detectIsMobile(): boolean {
+
+  return window.innerWidth <= 768 || 'ontouchstart' in window
+
+}
+
+
+
 function readStoredNavigationMode(): NavigationMode {
+
+  const fallback: NavigationMode = detectIsMobile() ? 'orbit' : 'wasd'
+
   try {
-    return localStorage.getItem(NAVIGATION_MODE_KEY) === 'orbit' ? 'orbit' : 'wasd'
+
+    const saved = localStorage.getItem(NAVIGATION_MODE_KEY)
+
+    return saved === 'orbit' || saved === 'wasd' ? saved : fallback
+
   } catch {
-    return 'wasd'
+
+    return fallback
+
   }
+
 }
 
 interface GalleryState {
@@ -35,7 +55,7 @@ export const useGallery = create<GalleryState>()((set) => ({
   webxrManager: null,
   selectedArtwork: null,
   selectedPosition: null,
-  isMobile: false,
+  isMobile: detectIsMobile(),
   navigationMode: readStoredNavigationMode(),
   cameraView: 'first',
   setWebXRManager: (manager) => set({ webxrManager: manager }),

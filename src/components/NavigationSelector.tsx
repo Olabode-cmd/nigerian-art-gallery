@@ -37,8 +37,8 @@ function HintRow({ keys, label }: { keys: ReactNode[]; label: string }) {
   )
 }
 
-const buttonStyle = (active: boolean, activeColor = '#2563eb') => ({
-  padding: '4px 12px',
+const buttonStyle = (active: boolean, isMobile: boolean, activeColor = '#2563eb') => ({
+  padding: isMobile ? '10px 16px' : '4px 12px',
   borderRadius: '4px',
   fontSize: '14px',
   border: 'none',
@@ -72,10 +72,6 @@ export default function NavigationSelector() {
     }
   }
 
-  if (isMobile) {
-    return null
-  }
-
   return (
     <>
       <div style={{
@@ -93,14 +89,14 @@ export default function NavigationSelector() {
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             onClick={() => handleModeChange('orbit')}
-            style={buttonStyle(currentMode === 'orbit')}
+            style={buttonStyle(currentMode === 'orbit', isMobile)}
           >
             <HugeiconsIcon icon={OrbitIcon} size={15} color="currentColor" strokeWidth={1.8} />
             Orbit
           </button>
           <button
             onClick={() => handleModeChange('wasd')}
-            style={buttonStyle(currentMode === 'wasd')}
+            style={buttonStyle(currentMode === 'wasd', isMobile)}
           >
             <HugeiconsIcon icon={KeyboardIcon} size={15} color="currentColor" strokeWidth={1.8} />
             WASD
@@ -108,7 +104,7 @@ export default function NavigationSelector() {
           {currentMode === 'wasd' && (
             <button
               onClick={() => setCameraView(cameraView === 'first' ? 'third' : 'first')}
-              style={buttonStyle(false)}
+              style={buttonStyle(false, isMobile)}
             >
               <HugeiconsIcon
                 icon={cameraView === 'first' ? UserIcon : EyeIcon}
@@ -122,7 +118,7 @@ export default function NavigationSelector() {
         </div>
       </div>
 
-      {currentMode === 'wasd' && (
+      {!isMobile && currentMode === 'wasd' && (
         <div style={{
           position: 'fixed',
           bottom: '16px',

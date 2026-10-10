@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, type MutableRefObject } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { useGallery } from '../store'
+import { input } from '../input'
 import { HEAD_Y } from './Avatar'
 
 const MOVE_SPEED = 5
@@ -39,10 +40,10 @@ const anyPressed = (keys: Set<string>, pressed: Set<string>) => {
 interface AvatarControlsProps {
   avatarRef: React.RefObject<Group | null>
   controlsRef: React.RefObject<OrbitControlsImpl | null>
+  speedRef: MutableRefObject<number>
 }
 
-export default function AvatarControls({ avatarRef, controlsRef }: AvatarControlsProps) {
-  const keys = useRef<Set<string>>(new Set())
+export default function AvatarControls({ avatarRef, controlsRef, speedRef }: AvatarControlsProps) {
   const { camera, gl } = useThree()
 
   useEffect(() => {
@@ -51,14 +52,14 @@ export default function AvatarControls({ avatarRef, controlsRef }: AvatarControl
       if (ARROW_KEYS.has(key)) {
         event.preventDefault() // arrows scroll the page by default
       }
-      keys.current.add(key)
+      input.press(key)
       if (key === 'c' && !event.repeat) {
         const { cameraView, setCameraView } = useGallery.getState()
         setCameraView(cameraView === 'first' ? 'third' : 'first')
       }
     }
     const handleKeyUp = (event: KeyboardEvent) => {
-      keys.current.delete(event.key.toLowerCase())
+      input.release(event.key.toLowerCase())
     }
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('keyup', handleKeyUp)
@@ -79,12 +80,14 @@ export default function AvatarControls({ avatarRef, controlsRef }: AvatarControl
 
     // --- Avatar movement ---
     const yaw = avatar.rotation.y
+    const prevX = avatar.position.x
+    const prevZ = avatar.position.z
     tmpForward.set(-Math.sin(yaw), 0, -Math.cos(yaw))
     tmpRight.set(tmpForward.z, 0, -tmpForward.x)
 
     let moveX = 0
     let moveZ = 0
-    const pressed = keys.current
+    const pressed = input.pressedKeys()
     if (anyPressed(FORWARD_KEYS, pressed)) {
       moveX += tmpForward.x
       moveZ += tmpForward.z
@@ -115,6 +118,11 @@ export default function AvatarControls({ avatarRef, controlsRef }: AvatarControl
         ROOM_BOUND
       )
     }
+
+    // Drive the walk animation from actual displacement, so the legs stop
+    // when the avatar is blocked by a wall
+    const moved = Math.hypot(avatar.position.x - prevX, avatar.position.z - prevZ)
+    speedRef.current = moved > 1e-4 ? 1 : 0
 
     if (anyPressed(TURN_LEFT_KEYS, pressed)) {
       avatar.rotation.y += TURN_SPEED * delta
