@@ -10,7 +10,8 @@ import NavigationSelector from './NavigationSelector'
 import LoadingScreen from './LoadingScreen'
 import { WebXRManager } from '../webxr/WebXRManager'
 import { VRButton } from '../webxr/VRButton'
-import { useGallery } from '../store'
+import { useGallery, detectIsMobile } from '../store'
+import TouchControls from './TouchControls'
 
 function GalleryScene() {
   const { gl, scene, camera } = useThree()
@@ -24,7 +25,7 @@ function GalleryScene() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window)
+      setIsMobile(detectIsMobile())
     }
     checkMobile()
     window.addEventListener('resize', checkMobile)
@@ -99,6 +100,7 @@ export default function Gallery() {
         <GalleryScene />
       </Canvas>
       <NavigationSelector />
+      <TouchControls />
     </div>
   )
 }

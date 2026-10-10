@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { useGallery } from '../store'
+import { input } from '../input'
 import { HEAD_Y } from './Avatar'
 
 const MOVE_SPEED = 5
@@ -42,7 +43,6 @@ interface AvatarControlsProps {
 }
 
 export default function AvatarControls({ avatarRef, controlsRef }: AvatarControlsProps) {
-  const keys = useRef<Set<string>>(new Set())
   const { camera, gl } = useThree()
 
   useEffect(() => {
@@ -51,14 +51,14 @@ export default function AvatarControls({ avatarRef, controlsRef }: AvatarControl
       if (ARROW_KEYS.has(key)) {
         event.preventDefault() // arrows scroll the page by default
       }
-      keys.current.add(key)
+      input.press(key)
       if (key === 'c' && !event.repeat) {
         const { cameraView, setCameraView } = useGallery.getState()
         setCameraView(cameraView === 'first' ? 'third' : 'first')
       }
     }
     const handleKeyUp = (event: KeyboardEvent) => {
-      keys.current.delete(event.key.toLowerCase())
+      input.release(event.key.toLowerCase())
     }
     document.addEventListener('keydown', handleKeyDown)
     document.addEventListener('keyup', handleKeyUp)
@@ -84,7 +84,7 @@ export default function AvatarControls({ avatarRef, controlsRef }: AvatarControl
 
     let moveX = 0
     let moveZ = 0
-    const pressed = keys.current
+    const pressed = input.pressedKeys()
     if (anyPressed(FORWARD_KEYS, pressed)) {
       moveX += tmpForward.x
       moveZ += tmpForward.z
