@@ -124,8 +124,11 @@ export default function Gallery() {
         camera={{ position: [0, 5, 8], fov: 75 }}
         dpr={[1, 1.5]}
         gl={{ powerPreference: 'high-performance', antialias: false }}
-        onCreated={() => {
+        onCreated={(state) => {
           logLoad('canvas ready')
+          const canvas = state.gl.domElement
+          canvas.addEventListener('webglcontextlost', () => logLoad('WebGL context LOST'))
+          canvas.addEventListener('webglcontextrestored', () => logLoad('WebGL context restored'))
         }}
       >
         <GalleryScene />
