@@ -1,6 +1,7 @@
 export type HairStyle = 'none' | 'short' | 'afro' | 'low'
 
-export interface AvatarConfig {
+// Type alias (not interface) so it's assignable to Trystero's JsonValue payloads
+export type AvatarConfig = {
   skin: string
   hair: string
   hairStyle: HairStyle
@@ -64,27 +65,39 @@ export const PANTS_COLORS = [
 ]
 
 const STORAGE_KEY = 'avatarConfig'
+const HEX_COLOR = /^#[0-9a-fA-F]{3,8}$/
 
-export function loadAvatarConfig(): AvatarConfig {
+/** Validates an unknown value (localStorage or a remote peer) into a safe config */
+export function sanitizeAvatarConfig(raw: unknown): AvatarConfig {
   const config = { ...DEFAULT_AVATAR_CONFIG }
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return config
-    const saved = JSON.parse(raw) as Record<string, unknown>
-    if (typeof saved.skin === 'string') config.skin = saved.skin
-    if (typeof saved.hair === 'string') config.hair = saved.hair
-    if (typeof saved.shirt === 'string') config.shirt = saved.shirt
-    if (typeof saved.pants === 'string') config.pants = saved.pants
-    if (
-      typeof saved.hairStyle === 'string' &&
-      HAIR_STYLES.some((style) => style.id === saved.hairStyle)
-    ) {
-      config.hairStyle = saved.hairStyle as HairStyle
-    }
-  } catch {
-    // Corrupted or unavailable storage — fall back to the defaults
+  if (typeof raw !== 'object' || raw === null) return config
+  const values = raw as Record<string, unknown>
+  const pickColor = (key: 'skin' | 'hair' | 'shirt' | 'pants') => {
+    const value = values[key]
+    if (typeof value === 'string' && HEX_COLOR.test(value)) config[key] = value
+  }
+  pickColor('skin')
+  pickColor('hair')
+  pickColor('shirt')
+  pickColor('pants')
+  if (
+    typeof values.hairStyle === 'string' &&
+    HAIR_STYLES.some((style) => style.id === values.hairStyle)
+  ) {
+    config.hairStyle = values.hairStyle as HairStyle
   }
   return config
+}
+
+export function loadAvatarConfig(): AvatarConfig {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return { ...DEFAULT_AVATAR_CONFIG }
+    return sanitizeAvatarConfig(JSON.parse(raw))
+  } catch {
+    // Corrupted or unavailable storage — fall back to the defaults
+    return { ...DEFAULT_AVATAR_CONFIG }
+  }
 }
 
 export function saveAvatarConfig(config: AvatarConfig): void {

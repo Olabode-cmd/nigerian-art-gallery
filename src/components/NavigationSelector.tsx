@@ -10,6 +10,7 @@ import {
   OrbitIcon,
   UserCircleIcon,
   UserIcon,
+  UserMultipleIcon,
 } from '@hugeicons/core-free-icons'
 import { useGallery } from '../store'
 
@@ -61,6 +62,10 @@ export default function NavigationSelector() {
   const setCameraView = useGallery((state) => state.setCameraView)
   const customizerOpen = useGallery((state) => state.customizerOpen)
   const setCustomizerOpen = useGallery((state) => state.setCustomizerOpen)
+  const lobbyOpen = useGallery((state) => state.lobbyOpen)
+  const setLobbyOpen = useGallery((state) => state.setLobbyOpen)
+  const roomId = useGallery((state) => state.roomId)
+  const peerCount = useGallery((state) => Object.keys(state.peers).length)
   const [controlsCollapsed, setControlsCollapsed] = useState(false)
 
   // Give new visitors time to read the controls, then tuck the panel away
@@ -119,11 +124,26 @@ export default function NavigationSelector() {
             </button>
           )}
           <button
-            onClick={() => setCustomizerOpen(!customizerOpen)}
+            onClick={() => {
+              const next = !customizerOpen
+              setCustomizerOpen(next)
+              if (next) setLobbyOpen(false)
+            }}
             style={buttonStyle(customizerOpen, isMobile, '#7c3aed')}
           >
             <HugeiconsIcon icon={UserCircleIcon} size={15} color="currentColor" strokeWidth={1.8} />
             Avatar
+          </button>
+          <button
+            onClick={() => {
+              const next = !lobbyOpen
+              setLobbyOpen(next)
+              if (next) setCustomizerOpen(false)
+            }}
+            style={buttonStyle(lobbyOpen, isMobile)}
+          >
+            <HugeiconsIcon icon={UserMultipleIcon} size={15} color="currentColor" strokeWidth={1.8} />
+            {roomId ? `Room · ${peerCount + 1}` : 'Multiplayer'}
           </button>
         </div>
       </div>

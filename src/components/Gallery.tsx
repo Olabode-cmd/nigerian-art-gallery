@@ -6,6 +6,7 @@ import type { Group } from 'three'
 import Room from './Room'
 import Avatar, { HEAD_Y } from './Avatar'
 import AvatarControls from './AvatarControls'
+import Peers from './Peers'
 import NavigationSelector from './NavigationSelector'
 import LoadingScreen from './LoadingScreen'
 import { WebXRManager } from '../webxr/WebXRManager'
@@ -13,6 +14,7 @@ import { VRButton } from '../webxr/VRButton'
 import { useGallery, detectIsMobile } from '../store'
 import TouchControls from './TouchControls'
 import AvatarCustomizer from './AvatarCustomizer'
+import RoomLobby from './RoomLobby'
 
 function GalleryScene() {
   const { gl, scene, camera } = useThree()
@@ -73,7 +75,7 @@ function GalleryScene() {
 
       <Avatar ref={avatarRef} speed={speedRef} config={avatarConfig} isLocal />
       <AvatarControls avatarRef={avatarRef} controlsRef={controlsRef} speedRef={speedRef} />
-      <AvatarControls avatarRef={avatarRef} controlsRef={controlsRef} speedRef={speedRef} />
+      <Peers />
 
       {isMobile || navigationMode === 'orbit' ? (
         <OrbitControls
@@ -105,6 +107,7 @@ export default function Gallery() {
       </Canvas>
       <NavigationSelector />
       <AvatarCustomizer />
+      <RoomLobby />
       <TouchControls />
     </div>
   )

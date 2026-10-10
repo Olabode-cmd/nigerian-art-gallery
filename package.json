@@ -17,6 +17,7 @@
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "three": "^0.180.0",
+    "trystero": "^0.26.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {

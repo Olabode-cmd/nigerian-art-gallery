@@ -1,19 +1,13 @@
-import { Suspense, useLayoutEffect, useMemo, useRef } from 'react'
-import { useGLTF, Text } from '@react-three/drei'
-import {
-  BoxGeometry,
-  CylinderGeometry,
-  MeshLambertMaterial,
-  Object3D,
-} from 'three'
+import { lazy, Suspense, useLayoutEffect, useMemo, useRef } from 'react'
+import { useGLTF } from '@react-three/drei'
+import { BoxGeometry, CylinderGeometry, MeshLambertMaterial, Object3D } from 'three'
 import type { InstancedMesh } from 'three'
 import ArtPiece from './ArtPiece'
-import FloatingInfoPanel from './FloatingInfoPanel'
 import LazyDecorations from './LazyDecorations'
 import { art } from '../data/art'
 import { useOptimizedTexture } from '../hooks/useOptimizedTexture'
+import { useSignTexture } from '../hooks/useSignTexture'
 import { useGallery, type Vec3 } from '../store'
-import { FONT_BOLD, FONT_REGULAR } from '../fonts'
 
 // Stable identities so the texture hook's memo doesn't invalidate every render
 const FLOOR_REPEAT: [number, number] = [4, 4]
@@ -28,6 +22,9 @@ const FRAME_GEOMETRY = new BoxGeometry(2.2, 2.8, 0.1)
 const FRAME_MATERIAL = new MeshLambertMaterial({ color: '#8B4513' })
 const COLUMN_GEOMETRY = new CylinderGeometry(0.3, 0.4, wallHeight, 12)
 const COLUMN_OFFSETS: [number, number][] = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
+
+// Loaded on demand with the troika text engine, on the first artwork selection
+const FloatingInfoPanel = lazy(() => import('./FloatingInfoPanel'))
 
 function getArtworkPlacement(index: number, roomSize: number): { position: Vec3; rotation: Vec3 } {
   const wallIndex = Math.floor(index / 4)
@@ -62,6 +59,7 @@ function getArtworkPlacement(index: number, roomSize: number): { position: Vec3;
 
 export default function Room() {
   const selectArtwork = useGallery((state) => state.selectArtwork)
+  const hasSelection = useGallery((state) => state.selectedArtwork !== null)
   const columnsRef = useRef<InstancedMesh>(null)
   const framesRef = useRef<InstancedMesh>(null)
 
@@ -80,6 +78,7 @@ export default function Room() {
     '/models/ceiling_textures/textures/ceiling_interior_diff_1k.jpg',
     CEILING_REPEAT
   )
+  const signTexture = useSignTexture()
 
   const columnMaterial = useMemo(() => new MeshLambertMaterial({ map: marble }), [marble])
 
@@ -167,49 +166,25 @@ export default function Room() {
       {/* Decorative Elements - Lazy Loaded */}
       <LazyDecorations />
 
-      {/* Instruction Sign */}
+      {/* Instruction Sign — text is baked to a texture, no troika on the critical path */}
       <group position={[0, 9, -9]}>
         <mesh>
           <boxGeometry args={[6, 2.2, 0.1]} />
           <meshLambertMaterial color="#333333" />
         </mesh>
-        <Text
-          font={FONT_BOLD}
-          position={[0, 0.4, 0.06]}
-          fontSize={0.25}
-          color="white"
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={5.5}
-        >
-          Click on any artwork to learn more
-        </Text>
-        <Text
-          font={FONT_REGULAR}
-          position={[0, -0.2, 0.06]}
-          fontSize={0.15}
-          color="#cccccc"
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={5.5}
-        >
-          contact developer: olabodebalogun80@gmail.com
-        </Text>
-        <Text
-          font={FONT_REGULAR}
-          position={[0, -0.5, 0.06]}
-          fontSize={0.15}
-          color="#cccccc"
-          anchorX="center"
-          anchorY="middle"
-          maxWidth={5.5}
-        >
-          twitter: @theavatar_bode
-        </Text>
+        <mesh position={[0, 0, 0.06]}>
+          <planeGeometry args={[6, 2.2]} />
+          <meshBasicMaterial map={signTexture} transparent />
+        </mesh>
       </group>
 
-      {/* Floating Info Panel */}
-      <FloatingInfoPanel />
+      {/* Floating Info Panel — mounted only while a selection exists, so the
+          troika text chunk loads on the first artwork click */}
+      {hasSelection && (
+        <Suspense fallback={null}>
+          <FloatingInfoPanel />
+        </Suspense>
+      )}
 
       {/* Artwork frames - instanced, one draw call for all 16 */}
       <instancedMesh ref={framesRef} args={[FRAME_GEOMETRY, FRAME_MATERIAL, art.length]} />
