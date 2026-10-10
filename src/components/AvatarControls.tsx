@@ -4,6 +4,7 @@ import { Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { useGallery } from '../store'
 import { input } from '../input'
+import { localPose } from '../room'
 import { HEAD_Y } from './Avatar'
 
 const MOVE_SPEED = 5
@@ -130,6 +131,11 @@ export default function AvatarControls({ avatarRef, controlsRef, speedRef }: Ava
     if (anyPressed(TURN_RIGHT_KEYS, pressed)) {
       avatar.rotation.y -= TURN_SPEED * delta
     }
+
+    // Feed the multiplayer pose sender
+    localPose.x = avatar.position.x
+    localPose.z = avatar.position.z
+    localPose.yaw = avatar.rotation.y
 
     // --- Camera ---
     tmpHead.set(avatar.position.x, HEAD_Y, avatar.position.z)
