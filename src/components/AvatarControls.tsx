@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, type MutableRefObject } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import { Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -40,9 +40,10 @@ const anyPressed = (keys: Set<string>, pressed: Set<string>) => {
 interface AvatarControlsProps {
   avatarRef: React.RefObject<Group | null>
   controlsRef: React.RefObject<OrbitControlsImpl | null>
+  speedRef: MutableRefObject<number>
 }
 
-export default function AvatarControls({ avatarRef, controlsRef }: AvatarControlsProps) {
+export default function AvatarControls({ avatarRef, controlsRef, speedRef }: AvatarControlsProps) {
   const { camera, gl } = useThree()
 
   useEffect(() => {
@@ -79,6 +80,8 @@ export default function AvatarControls({ avatarRef, controlsRef }: AvatarControl
 
     // --- Avatar movement ---
     const yaw = avatar.rotation.y
+    const prevX = avatar.position.x
+    const prevZ = avatar.position.z
     tmpForward.set(-Math.sin(yaw), 0, -Math.cos(yaw))
     tmpRight.set(tmpForward.z, 0, -tmpForward.x)
 
@@ -115,6 +118,11 @@ export default function AvatarControls({ avatarRef, controlsRef }: AvatarControl
         ROOM_BOUND
       )
     }
+
+    // Drive the walk animation from actual displacement, so the legs stop
+    // when the avatar is blocked by a wall
+    const moved = Math.hypot(avatar.position.x - prevX, avatar.position.z - prevZ)
+    speedRef.current = moved > 1e-4 ? 1 : 0
 
     if (anyPressed(TURN_LEFT_KEYS, pressed)) {
       avatar.rotation.y += TURN_SPEED * delta

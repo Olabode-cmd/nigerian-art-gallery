@@ -18,6 +18,7 @@ function GalleryScene() {
   const managerRef = useRef<WebXRManager | null>(null)
   const avatarRef = useRef<Group>(null)
   const controlsRef = useRef<OrbitControlsImpl>(null)
+  const speedRef = useRef(0)
   const isMobile = useGallery((state) => state.isMobile)
   const navigationMode = useGallery((state) => state.navigationMode)
   const setIsMobile = useGallery((state) => state.setIsMobile)
@@ -68,8 +69,8 @@ function GalleryScene() {
         <Room />
       </Suspense>
 
-      <Avatar ref={avatarRef} />
-      <AvatarControls avatarRef={avatarRef} controlsRef={controlsRef} />
+      <Avatar ref={avatarRef} speed={speedRef} />
+      <AvatarControls avatarRef={avatarRef} controlsRef={controlsRef} speedRef={speedRef} />
 
       {isMobile || navigationMode === 'orbit' ? (
         <OrbitControls
