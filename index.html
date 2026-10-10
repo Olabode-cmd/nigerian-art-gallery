@@ -6,6 +6,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1a1a1a" />
     <title>Nigerian Art Gallery</title>
+    <script>
+      window.__log = function (msg) {
+        console.log('[load ' + Math.round(performance.now()) + 'ms] ' + msg)
+      }
+      window.__log('html parsed')
+      // capture: true also catches resource load failures (scripts, CSS, images)
+      window.addEventListener(
+        'error',
+        function (e) {
+          var target = e.target
+          window.__log(
+            'ERROR ' + (target && target.src ? 'loading ' + (target.src || target.href) : e.message)
+          )
+        },
+        true
+      )
+      window.addEventListener('unhandledrejection', function (e) {
+        window.__log('REJECTION ' + e.reason)
+      })
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
