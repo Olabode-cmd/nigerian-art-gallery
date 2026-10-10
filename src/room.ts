@@ -1,6 +1,7 @@
 import type { DataPayload, MessageAction, Room } from 'trystero'
 import { sanitizeAvatarConfig, type AvatarConfig } from './avatarConfig'
 import { useGallery } from './store'
+import { voice } from './voice'
 
 const APP_ID = 'nigerian-art-gallery'
 const POSE_INTERVAL_MS = 80 // ~12.5 Hz
@@ -54,12 +55,18 @@ export function prewarmRoom(): void {
 let room: Room | null = null
 let poseAction: MessageAction<PoseData> | null = null
 let configAction: MessageAction<AvatarConfig> | null = null
+let metaAction: MessageAction<{ name: string }> | null = null
 let poseInterval: number | null = null
 let unsubscribeConfig: (() => void) | null = null
 let joinPending = false
 let joinGeneration = 0
 let searchTimer: number | null = null
 let joinErrorTimer: number | null = null
+
+function sanitizeName(name: unknown): string {
+  if (typeof name !== 'string') return ''
+  return name.replace(/\s+/g, ' ').trim().slice(0, 24)
+}
 
 function safeSend<T extends DataPayload>(
   action: MessageAction<T> | null,
@@ -162,6 +169,11 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
         useGallery.getState().setPeerConfig(context.peerId, sanitizeAvatarConfig(data))
       },
     })
+    metaAction = instance.makeAction<{ name: string }>('meta', {
+      onMessage: (data, context) => {
+        useGallery.getState().setPeerName(context.peerId, sanitizeName(data.name))
+      },
+    })
 
     instance.onPeerJoin = (peerId) => {
       ensurePeer(peerId)
@@ -169,12 +181,27 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
         clearTimeout(searchTimer)
         searchTimer = null
       }
-      // Give the new peer our config; they do the same for us
-      safeSend(configAction, useGallery.getState().avatarConfig, peerId)
+      const profile = useGallery.getState()
+      // Give the new peer our config and name; they do the same for us
+      safeSend(configAction, profile.avatarConfig, peerId)
+      safeSend(metaAction, { name: sanitizeName(profile.userName) }, peerId)
+      // Late joiners need the mic stream if voice is already on
+      const micStream = voice.getMicStream()
+      if (micStream) {
+        Promise.allSettled(instance.addStream(micStream, { target: peerId }))
+      }
     }
-    instance.onPeerLeave = (peerId) => removePeer(peerId)
+    instance.onPeerLeave = (peerId) => {
+      voice.removeRemote(peerId)
+      removePeer(peerId)
+    }
+    instance.onPeerStream = (stream, peerId) => {
+      voice.addRemote(peerId, stream)
+    }
 
     room = instance
+    voice.setRoom(instance)
+    useGallery.getState().addRecentRoom(roomId)
     updateUrl(roomId)
 
     poseInterval = window.setInterval(() => {
@@ -190,10 +217,13 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
       }
     }, SEARCH_TIMEOUT_MS)
 
-    // Broadcast live avatar customizations
+    // Broadcast live avatar customizations and name changes
     unsubscribeConfig = useGallery.subscribe((state, prev) => {
       if (state.avatarConfig !== prev.avatarConfig) {
         safeSend(configAction, state.avatarConfig)
+      }
+      if (state.userName !== prev.userName) {
+        safeSend(metaAction, { name: sanitizeName(state.userName) })
       }
     })
   } catch {
@@ -224,6 +254,7 @@ export function leaveRoom(): void {
     unsubscribeConfig()
     unsubscribeConfig = null
   }
+  voice.setRoom(null)
   if (room) {
     room.leave().catch(() => {
       // Already disconnecting
@@ -232,6 +263,7 @@ export function leaveRoom(): void {
   }
   poseAction = null
   configAction = null
+  metaAction = null
   remotePlayers.clear()
   const store = useGallery.getState()
   store.clearPeers()
