@@ -1,0 +1,27 @@
+{
+  "default_branch": "main",
+  "branches": [
+    "avatar",
+    "full-vr",
+    "main",
+    "origin",
+    "rooms",
+    "updates"
+  ],
+  "parent": {
+    "avatar": "main",
+    "full-vr": "main",
+    "main": null,
+    "origin": "main",
+    "rooms": "main",
+    "updates": "main"
+  },
+  "order": [
+    "main",
+    "avatar",
+    "full-vr",
+    "origin",
+    "rooms",
+    "updates"
+  ]
+}

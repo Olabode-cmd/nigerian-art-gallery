@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { WebXRManager } from './webxr/WebXRManager'
 import type { Artwork } from './data/art'
+import { loadAvatarConfig, saveAvatarConfig, type AvatarConfig } from './avatarConfig'
 
 export type NavigationMode = 'orbit' | 'wasd'
 export type CameraView = 'first' | 'third'
@@ -43,12 +44,16 @@ interface GalleryState {
   isMobile: boolean
   navigationMode: NavigationMode
   cameraView: CameraView
+  avatarConfig: AvatarConfig
+  customizerOpen: boolean
   setWebXRManager: (manager: WebXRManager | null) => void
   selectArtwork: (artwork: Artwork, position: Vec3) => void
   closePanel: () => void
   setNavigationMode: (mode: NavigationMode) => void
   setIsMobile: (isMobile: boolean) => void
   setCameraView: (view: CameraView) => void
+  setAvatarConfig: (partial: Partial<AvatarConfig>) => void
+  setCustomizerOpen: (open: boolean) => void
 }
 
 export const useGallery = create<GalleryState>()((set) => ({
@@ -58,6 +63,8 @@ export const useGallery = create<GalleryState>()((set) => ({
   isMobile: detectIsMobile(),
   navigationMode: readStoredNavigationMode(),
   cameraView: 'first',
+  avatarConfig: loadAvatarConfig(),
+  customizerOpen: false,
   setWebXRManager: (manager) => set({ webxrManager: manager }),
   selectArtwork: (artwork, position) =>
     set({ selectedArtwork: artwork, selectedPosition: position }),
@@ -72,4 +79,11 @@ export const useGallery = create<GalleryState>()((set) => ({
   },
   setIsMobile: (isMobile) => set({ isMobile }),
   setCameraView: (cameraView) => set({ cameraView }),
+  setAvatarConfig: (partial) =>
+    set((state) => {
+      const avatarConfig = { ...state.avatarConfig, ...partial }
+      saveAvatarConfig(avatarConfig)
+      return { avatarConfig }
+    }),
+  setCustomizerOpen: (customizerOpen) => set({ customizerOpen }),
 }))

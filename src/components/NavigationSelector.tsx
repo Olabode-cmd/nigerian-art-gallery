@@ -8,6 +8,7 @@ import {
   EyeIcon,
   KeyboardIcon,
   OrbitIcon,
+  UserCircleIcon,
   UserIcon,
 } from '@hugeicons/core-free-icons'
 import { useGallery } from '../store'
@@ -58,6 +59,8 @@ export default function NavigationSelector() {
   const setNavigationMode = useGallery((state) => state.setNavigationMode)
   const cameraView = useGallery((state) => state.cameraView)
   const setCameraView = useGallery((state) => state.setCameraView)
+  const customizerOpen = useGallery((state) => state.customizerOpen)
+  const setCustomizerOpen = useGallery((state) => state.setCustomizerOpen)
   const [controlsCollapsed, setControlsCollapsed] = useState(false)
 
   // Give new visitors time to read the controls, then tuck the panel away
@@ -115,6 +118,13 @@ export default function NavigationSelector() {
               {cameraView === 'first' ? 'Switch to 3rd person' : 'Switch to 1st person'}
             </button>
           )}
+          <button
+            onClick={() => setCustomizerOpen(!customizerOpen)}
+            style={buttonStyle(customizerOpen, isMobile, '#7c3aed')}
+          >
+            <HugeiconsIcon icon={UserCircleIcon} size={15} color="currentColor" strokeWidth={1.8} />
+            Avatar
+          </button>
         </div>
       </div>
 
