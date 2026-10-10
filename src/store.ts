@@ -112,7 +112,7 @@ export const useGallery = create<GalleryState>()((set) => ({
   selectedPosition: null,
   isMobile: detectIsMobile(),
   navigationMode: readStoredNavigationMode(),
-  cameraView: 'first',
+  cameraView: 'third',
   avatarConfig: loadAvatarConfig(),
   customizerOpen: false,
   roomId: null,

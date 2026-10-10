@@ -84,7 +84,7 @@ export default function AvatarControls({ avatarRef, controlsRef, speedRef }: Ava
     const prevX = avatar.position.x
     const prevZ = avatar.position.z
     tmpForward.set(-Math.sin(yaw), 0, -Math.cos(yaw))
-    tmpRight.set(tmpForward.z, 0, -tmpForward.x)
+    tmpRight.set(-tmpForward.z, 0, tmpForward.x)
 
     let moveX = 0
     let moveZ = 0
