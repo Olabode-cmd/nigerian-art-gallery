@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   ArrowDownIcon,
@@ -50,12 +50,21 @@ const buttonStyle = (active: boolean, activeColor = '#2563eb') => ({
   color: active ? 'white' : '#d1d5db'
 })
 
+const AUTO_COLLAPSE_MS = 5000
+
 export default function NavigationSelector() {
   const isMobile = useGallery((state) => state.isMobile)
   const currentMode = useGallery((state) => state.navigationMode)
   const setNavigationMode = useGallery((state) => state.setNavigationMode)
   const cameraView = useGallery((state) => state.cameraView)
   const setCameraView = useGallery((state) => state.setCameraView)
+  const [controlsCollapsed, setControlsCollapsed] = useState(false)
+
+  // Give new visitors time to read the controls, then tuck the panel away
+  useEffect(() => {
+    const timer = setTimeout(() => setControlsCollapsed(true), AUTO_COLLAPSE_MS)
+    return () => clearTimeout(timer)
+  }, [])
 
   const handleModeChange = (mode: 'orbit' | 'wasd') => {
     if (mode !== currentMode) {
@@ -77,10 +86,11 @@ export default function NavigationSelector() {
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         backdropFilter: 'blur(4px)',
         borderRadius: '8px',
-        padding: '12px'
+        padding: '12px',
+        maxWidth: 'calc(100vw - 32px)'
       }}>
         <div style={{ color: 'white', fontSize: '14px', marginBottom: '8px' }}>Navigation</div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
           <button
             onClick={() => handleModeChange('orbit')}
             style={buttonStyle(currentMode === 'orbit')}
@@ -98,15 +108,15 @@ export default function NavigationSelector() {
           {currentMode === 'wasd' && (
             <button
               onClick={() => setCameraView(cameraView === 'first' ? 'third' : 'first')}
-              style={buttonStyle(cameraView === 'third', '#7c3aed')}
+              style={buttonStyle(false)}
             >
               <HugeiconsIcon
-                icon={cameraView === 'third' ? UserIcon : EyeIcon}
+                icon={cameraView === 'first' ? UserIcon : EyeIcon}
                 size={15}
                 color="currentColor"
                 strokeWidth={1.8}
               />
-              {cameraView === 'third' ? '3rd Person' : '1st Person'}
+              {cameraView === 'first' ? 'Switch to 3rd person' : 'Switch to 1st person'}
             </button>
           )}
         </div>
@@ -123,29 +133,52 @@ export default function NavigationSelector() {
           borderRadius: '8px',
           padding: '12px'
         }}>
-          <div style={{
-            color: 'white',
-            fontSize: '14px',
-            marginBottom: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}>
+          <button
+            onClick={() => setControlsCollapsed((c) => !c)}
+            aria-expanded={!controlsCollapsed}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              width: '100%',
+              padding: 0,
+              background: 'transparent',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'white',
+              fontSize: '14px'
+            }}
+          >
             <HugeiconsIcon icon={KeyboardIcon} size={14} color="#9ca3af" strokeWidth={1.8} />
             Controls
-          </div>
-          <div style={{ color: '#d1d5db', fontSize: '12px' }}>
-            <HintRow keys={['W']} label="Move Forward" />
-            <HintRow keys={['S']} label="Move Backward" />
-            <HintRow keys={['A']} label="Strafe Left" />
-            <HintRow keys={['D']} label="Strafe Right" />
-            <HintRow keys={['Q']} label="Turn Left" />
-            <HintRow keys={['E']} label="Turn Right" />
-            <HintRow keys={[<HugeiconsIcon key="up" icon={ArrowUpIcon} size={12} strokeWidth={2.2} />]} label="Move Forward" />
-            <HintRow keys={[<HugeiconsIcon key="down" icon={ArrowDownIcon} size={12} strokeWidth={2.2} />]} label="Move Backward" />
-            <HintRow keys={[<HugeiconsIcon key="left" icon={ArrowLeftIcon} size={12} strokeWidth={2.2} />]} label="Turn Left" />
-            <HintRow keys={[<HugeiconsIcon key="right" icon={ArrowRightIcon} size={12} strokeWidth={2.2} />]} label="Turn Right" />
-            <HintRow keys={['C']} label="Switch Camera" />
+            <span style={{ flex: 1 }} />
+            <span style={{
+              display: 'inline-flex',
+              transform: controlsCollapsed ? 'rotate(180deg)' : 'rotate(0deg)',
+              transition: 'transform 0.3s ease'
+            }}>
+              <HugeiconsIcon icon={ArrowDownIcon} size={14} color="#9ca3af" strokeWidth={1.8} />
+            </span>
+          </button>
+          <div style={{
+            maxHeight: controlsCollapsed ? 0 : '500px',
+            opacity: controlsCollapsed ? 0 : 1,
+            overflow: 'hidden',
+            transition: 'max-height 0.4s ease, opacity 0.3s ease'
+          }}>
+            <div style={{ paddingTop: '8px', color: '#d1d5db', fontSize: '12px' }}>
+              <HintRow keys={['W']} label="Move Forward" />
+              <HintRow keys={['S']} label="Move Backward" />
+              <HintRow keys={['A']} label="Strafe Left" />
+              <HintRow keys={['D']} label="Strafe Right" />
+              <HintRow keys={['Q']} label="Turn Left" />
+              <HintRow keys={['E']} label="Turn Right" />
+              <HintRow keys={[<HugeiconsIcon key="up" icon={ArrowUpIcon} size={12} strokeWidth={2.2} />]} label="Move Forward" />
+              <HintRow keys={[<HugeiconsIcon key="down" icon={ArrowDownIcon} size={12} strokeWidth={2.2} />]} label="Move Backward" />
+              <HintRow keys={[<HugeiconsIcon key="left" icon={ArrowLeftIcon} size={12} strokeWidth={2.2} />]} label="Turn Left" />
+              <HintRow keys={[<HugeiconsIcon key="right" icon={ArrowRightIcon} size={12} strokeWidth={2.2} />]} label="Turn Right" />
+              <HintRow keys={['C']} label="Switch Camera" />
+            </div>
           </div>
         </div>
       )}
