@@ -143,7 +143,7 @@ export default function NavigationSelector() {
             style={buttonStyle(lobbyOpen, isMobile)}
           >
             <HugeiconsIcon icon={UserMultipleIcon} size={15} color="currentColor" strokeWidth={1.8} />
-            {roomId ? `Room · ${peerCount + 1}` : 'Multiplayer'}
+            {roomId ? `Room · ${peerCount + 1}` : 'Rooms'}
           </button>
         </div>
       </div>
