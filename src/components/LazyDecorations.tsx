@@ -40,8 +40,3 @@ export default function LazyDecorations() {
     </Suspense>
   )
 }
-
-// Preload models after initial render
-useGLTF.preload('/models/decorative_vase.glb')
-useGLTF.preload('/models/rhyzome_plant.glb')
-useGLTF.preload('/models/apoll_sculpture.glb')
