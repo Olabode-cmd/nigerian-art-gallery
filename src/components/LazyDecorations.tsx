@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import { useGLTF } from '@react-three/drei'
+import ErrorBoundary from './ErrorBoundary'
 
 function DecorativeVase() {
   const { scene } = useGLTF('/models/decorative_vase.glb')
@@ -26,9 +27,16 @@ function ApollSculpture() {
 export default function LazyDecorations() {
   return (
     <Suspense fallback={null}>
-      <DecorativeVase />
-      <RhyzomePlant />
-      <ApollSculpture />
+      {/* A failed decoration is missing but the gallery stays up */}
+      <ErrorBoundary fallback={null}>
+        <DecorativeVase />
+      </ErrorBoundary>
+      <ErrorBoundary fallback={null}>
+        <RhyzomePlant />
+      </ErrorBoundary>
+      <ErrorBoundary fallback={null}>
+        <ApollSculpture />
+      </ErrorBoundary>
     </Suspense>
   )
 }

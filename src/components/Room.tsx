@@ -1,5 +1,5 @@
 import { lazy, Suspense, useLayoutEffect, useMemo, useRef } from 'react'
-import { useGLTF } from '@react-three/drei'
+import { useGLTF, useTexture } from '@react-three/drei'
 import { BoxGeometry, CylinderGeometry, MeshLambertMaterial, Object3D } from 'three'
 import type { InstancedMesh } from 'three'
 import ArtPiece from './ArtPiece'
@@ -25,6 +25,10 @@ const COLUMN_OFFSETS: [number, number][] = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
 
 // Loaded on demand with the troika text engine, on the first artwork selection
 const FloatingInfoPanel = lazy(() => import('./FloatingInfoPanel'))
+
+// Start artwork downloads immediately, in parallel with the room assets —
+// on slow connections the serial suspense cascade otherwise adds minutes
+useTexture.preload(art.map((artwork) => artwork.image))
 
 function getArtworkPlacement(index: number, roomSize: number): { position: Vec3; rotation: Vec3 } {
   const wallIndex = Math.floor(index / 4)
@@ -64,18 +68,18 @@ export default function Room() {
   const framesRef = useRef<InstancedMesh>(null)
 
   const floor = useOptimizedTexture(
-    '/models/floor_textures/textures/wood_floor_diff_2k.jpg',
+    '/models/floor_textures/textures/wood_floor_diff_2k.webp',
     FLOOR_REPEAT
   )
   const wall = useOptimizedTexture(
-    '/models/stone_tile_wall/textures/stone_tile_wall_diff_1k.jpg',
+    '/models/stone_tile_wall/textures/stone_tile_wall_diff_1k.webp',
     WALL_REPEAT
   )
   const marble = useOptimizedTexture(
-    '/models/marble_textures/textures/marble_mosaic_tiles_diff_1k.jpg'
+    '/models/marble_textures/textures/marble_mosaic_tiles_diff_1k.webp'
   )
   const ceiling = useOptimizedTexture(
-    '/models/ceiling_textures/textures/ceiling_interior_diff_1k.jpg',
+    '/models/ceiling_textures/textures/ceiling_interior_diff_1k.webp',
     CEILING_REPEAT
   )
   const signTexture = useSignTexture()
