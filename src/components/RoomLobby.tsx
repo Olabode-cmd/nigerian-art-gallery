@@ -1,8 +1,27 @@
 import { useEffect, useState, type CSSProperties } from 'react'
 import { useGallery } from '../store'
 import { joinRoomAsPlayer, leaveRoom, prewarmRoom } from '../room'
+import { voice } from '../voice'
 
 const ROOM_CODE_PATTERN = /^[a-zA-Z0-9-]{4,64}$/
+
+const labelStyle: CSSProperties = {
+  color: '#9ca3af',
+  fontSize: '11px',
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  marginBottom: '6px'
+}
+
+const pillButton: CSSProperties = {
+  padding: '4px 10px',
+  borderRadius: '999px',
+  fontSize: '12px',
+  border: 'none',
+  cursor: 'pointer',
+  backgroundColor: '#4b5563',
+  color: '#d1d5db'
+}
 
 function createRoomCode(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
@@ -81,6 +100,9 @@ export default function RoomLobby() {
   const roomError = useGallery((state) => state.roomError)
   const peerCount = useGallery((state) => Object.keys(state.peers).length)
   const setLobbyOpen = useGallery((state) => state.setLobbyOpen)
+  const userName = useGallery((state) => state.userName)
+  const setUserName = useGallery((state) => state.setUserName)
+  const recentRooms = useGallery((state) => state.recentRooms)
   const [code, setCode] = useState(
     () => new URLSearchParams(window.location.search).get('room') ?? ''
   )
@@ -106,12 +128,19 @@ export default function RoomLobby() {
   const isValid = ROOM_CODE_PATTERN.test(code.trim())
 
   const handleCreate = () => {
+    voice.ensureContext() // the audio context must be created inside a user gesture
     void joinRoomAsPlayer(createRoomCode())
   }
 
   const handleJoin = () => {
     const id = code.trim()
     if (!ROOM_CODE_PATTERN.test(id)) return
+    voice.ensureContext()
+    void joinRoomAsPlayer(id)
+  }
+
+  const handleJoinRecent = (id: string) => {
+    voice.ensureContext()
     void joinRoomAsPlayer(id)
   }
 
@@ -175,6 +204,16 @@ export default function RoomLobby() {
         </>
       ) : (
         <>
+          <div style={{ marginBottom: '12px' }}>
+            <div style={labelStyle}>Your name</div>
+            <input
+              value={userName}
+              onChange={(event) => setUserName(event.target.value)}
+              placeholder="Optional"
+              maxLength={24}
+              style={{ ...inputStyle, width: '100%', flex: 'none' }}
+            />
+          </div>
           <button onClick={handleCreate} style={{ ...primaryButton, marginBottom: '12px' }}>
             Create room
           </button>
@@ -205,6 +244,22 @@ export default function RoomLobby() {
               Join
             </button>
           </div>
+          {recentRooms.length > 0 && (
+            <div style={{ marginBottom: '10px' }}>
+              <div style={labelStyle}>Recent</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {recentRooms.map((id) => (
+                  <button
+                    key={id}
+                    onClick={() => handleJoinRecent(id)}
+                    style={{ ...pillButton, fontFamily: 'monospace' }}
+                  >
+                    {id}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           <div style={{ color: '#6b7280', fontSize: '11px' }}>
             Anyone with the room code can join — share the invite link.
           </div>

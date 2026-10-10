@@ -13,6 +13,8 @@ export type CameraView = 'first' | 'third'
 export type Vec3 = [number, number, number]
 
 const NAVIGATION_MODE_KEY = 'navigationMode'
+const USER_NAME_KEY = 'userName'
+const RECENT_ROOMS_KEY = 'recentRooms'
 
 
 
@@ -23,6 +25,27 @@ export function detectIsMobile(): boolean {
 }
 
 
+
+function loadUserName(): string {
+  try {
+    const raw = localStorage.getItem(USER_NAME_KEY)
+    return typeof raw === 'string' ? raw : ''
+  } catch {
+    return ''
+  }
+}
+
+function loadRecentRooms(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENT_ROOMS_KEY)
+    const parsed = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed)
+      ? parsed.filter((id): id is string => typeof id === 'string').slice(0, 3)
+      : []
+  } catch {
+    return []
+  }
+}
 
 function readStoredNavigationMode(): NavigationMode {
 
@@ -54,7 +77,12 @@ interface GalleryState {
   roomId: string | null
   roomError: string | null
   lobbyOpen: boolean
-  peers: Record<string, { config: AvatarConfig }>
+  voiceEnabled: boolean
+  voiceMuted: boolean
+  voiceError: string | null
+  userName: string
+  recentRooms: string[]
+  peers: Record<string, { config: AvatarConfig; name?: string }>
   setWebXRManager: (manager: WebXRManager | null) => void
   selectArtwork: (artwork: Artwork, position: Vec3) => void
   closePanel: () => void
@@ -66,6 +94,12 @@ interface GalleryState {
   setRoomId: (roomId: string | null) => void
   setRoomError: (error: string | null) => void
   setLobbyOpen: (open: boolean) => void
+  setVoiceEnabled: (enabled: boolean) => void
+  setVoiceMuted: (muted: boolean) => void
+  setVoiceError: (error: string | null) => void
+  setUserName: (name: string) => void
+  setPeerName: (id: string, name: string) => void
+  addRecentRoom: (id: string) => void
   addPeer: (id: string, config?: AvatarConfig) => void
   removePeer: (id: string) => void
   setPeerConfig: (id: string, config: AvatarConfig) => void
@@ -84,6 +118,11 @@ export const useGallery = create<GalleryState>()((set) => ({
   roomId: null,
   roomError: null,
   lobbyOpen: false,
+  voiceEnabled: false,
+  voiceMuted: false,
+  voiceError: null,
+  userName: loadUserName(),
+  recentRooms: loadRecentRooms(),
   peers: {},
   setWebXRManager: (manager) => set({ webxrManager: manager }),
   selectArtwork: (artwork, position) =>
@@ -109,6 +148,37 @@ export const useGallery = create<GalleryState>()((set) => ({
   setRoomId: (roomId) => set({ roomId }),
   setRoomError: (roomError) => set({ roomError }),
   setLobbyOpen: (lobbyOpen) => set({ lobbyOpen }),
+  setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
+  setVoiceMuted: (voiceMuted) => set({ voiceMuted }),
+  setVoiceError: (voiceError) => set({ voiceError }),
+  setUserName: (userName) => {
+    set({ userName })
+    try {
+      localStorage.setItem(USER_NAME_KEY, userName)
+    } catch {
+      // Storage unavailable — the name still applies for this session
+    }
+  },
+  setPeerName: (id, name) =>
+    set((state) => {
+      const existing = state.peers[id]
+      return {
+        peers: {
+          ...state.peers,
+          [id]: { config: existing?.config ?? DEFAULT_AVATAR_CONFIG, name },
+        },
+      }
+    }),
+  addRecentRoom: (id) =>
+    set((state) => {
+      const recentRooms = [id, ...state.recentRooms.filter((room) => room !== id)].slice(0, 3)
+      try {
+        localStorage.setItem(RECENT_ROOMS_KEY, JSON.stringify(recentRooms))
+      } catch {
+        // Storage unavailable — the list still applies for this session
+      }
+      return { recentRooms }
+    }),
   addPeer: (id, config) =>
     set((state) =>
       state.peers[id]

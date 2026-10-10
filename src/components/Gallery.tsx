@@ -12,9 +12,21 @@ import LoadingScreen from './LoadingScreen'
 import { WebXRManager } from '../webxr/WebXRManager'
 import { VRButton } from '../webxr/VRButton'
 import { useGallery, detectIsMobile } from '../store'
+import { voice } from '../voice'
 import TouchControls from './TouchControls'
 import AvatarCustomizer from './AvatarCustomizer'
 import RoomLobby from './RoomLobby'
+import VoiceControls from './VoiceControls'
+
+function VoiceAnalyzer() {
+  const camera = useThree((state) => state.camera)
+  useFrame(() => {
+    // Drives speech indicators and keeps the 3D audio listener at the camera
+    voice.updateLevels()
+    voice.updateListener(camera)
+  })
+  return null
+}
 
 function GalleryScene() {
   const { gl, scene, camera } = useThree()
@@ -27,6 +39,7 @@ function GalleryScene() {
   const navigationMode = useGallery((state) => state.navigationMode)
   const setIsMobile = useGallery((state) => state.setIsMobile)
   const setWebXRManager = useGallery((state) => state.setWebXRManager)
+  const userName = useGallery((state) => state.userName)
 
   useEffect(() => {
     const checkMobile = () => {
@@ -73,9 +86,17 @@ function GalleryScene() {
         <Room />
       </Suspense>
 
-      <Avatar ref={avatarRef} speed={speedRef} config={avatarConfig} isLocal />
+      <Avatar
+        ref={avatarRef}
+        speed={speedRef}
+        speech={voice.localSpeech}
+        config={avatarConfig}
+        name={userName}
+        isLocal
+      />
       <AvatarControls avatarRef={avatarRef} controlsRef={controlsRef} speedRef={speedRef} />
       <Peers />
+      <VoiceAnalyzer />
 
       {isMobile || navigationMode === 'orbit' ? (
         <OrbitControls
@@ -108,6 +129,7 @@ export default function Gallery() {
       <NavigationSelector />
       <AvatarCustomizer />
       <RoomLobby />
+      <VoiceControls />
       <TouchControls />
     </div>
   )
