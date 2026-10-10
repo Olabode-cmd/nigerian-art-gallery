@@ -12,6 +12,7 @@ import LoadingScreen from './LoadingScreen'
 import { WebXRManager } from '../webxr/WebXRManager'
 import { VRButton } from '../webxr/VRButton'
 import { useGallery, detectIsMobile } from '../store'
+import { logLoad } from '../debugLog'
 import { voice } from '../voice'
 import TouchControls from './TouchControls'
 import AvatarCustomizer from './AvatarCustomizer'
@@ -123,6 +124,9 @@ export default function Gallery() {
         camera={{ position: [0, 5, 8], fov: 75 }}
         dpr={[1, 1.5]}
         gl={{ powerPreference: 'high-performance', antialias: false }}
+        onCreated={() => {
+          logLoad('canvas ready')
+        }}
       >
         <GalleryScene />
       </Canvas>

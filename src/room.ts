@@ -2,6 +2,7 @@ import type { DataPayload, MessageAction, Room } from 'trystero'
 import { sanitizeAvatarConfig, type AvatarConfig } from './avatarConfig'
 import { useGallery } from './store'
 import { voice } from './voice'
+import { logLoad } from './debugLog'
 
 const APP_ID = 'nigerian-art-gallery'
 const POSE_INTERVAL_MS = 80 // ~12.5 Hz
@@ -47,9 +48,15 @@ function loadTrystero(): Promise<TrysteroModule> {
 
 /** Warm up the multiplayer chunk while the user is looking at the lobby */
 export function prewarmRoom(): void {
-  void loadTrystero().catch(() => {
-    // Chunk fetch failure surfaces as a join error later
-  })
+  const started = performance.now()
+  void loadTrystero()
+    .then(() => {
+      logLoad(`multiplayer chunk ready in ${Math.round(performance.now() - started)}ms`)
+    })
+    .catch(() => {
+      // Chunk fetch failure surfaces as a join error later
+      logLoad('multiplayer chunk FAILED to load')
+    })
 }
 
 let room: Room | null = null

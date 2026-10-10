@@ -1,13 +1,22 @@
 import { useProgress } from '@react-three/drei'
 import { useEffect, useState } from 'react'
+import { logLoad } from '../debugLog'
 
 export default function LoadingScreen() {
-  const { progress } = useProgress()
+  const { progress, errors } = useProgress()
   const [show, setShow] = useState(true)
 
   useEffect(() => {
+    logLoad('loading screen visible')
+  }, [])
+
+  useEffect(() => {
     if (progress === 100) {
-      const timer = setTimeout(() => setShow(false), 500)
+      logLoad('progress 100 — hiding loading screen in 500ms')
+      const timer = setTimeout(() => {
+        logLoad('loading screen hidden')
+        setShow(false)
+      }, 500)
       return () => clearTimeout(timer)
     }
   }, [progress])
@@ -61,6 +70,11 @@ export default function LoadingScreen() {
       <p style={{ color: '#aaa', marginTop: '1rem' }}>
         Loading... {Math.round(progress)}%
       </p>
+      {errors.length > 0 && (
+        <p style={{ color: '#f87171', marginTop: '0.5rem', fontSize: '0.9rem' }}>
+          {errors.length} asset{errors.length > 1 ? 's' : ''} failed to load
+        </p>
+      )}
     </div>
   )
 }
