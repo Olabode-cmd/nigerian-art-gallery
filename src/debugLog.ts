@@ -1,20 +1,24 @@
 import { DefaultLoadingManager } from 'three'
 
 /**
- * Temporary loading diagnostics — every log shares the "[load Xms]" prefix so
- * the console can be filtered and copied as one block. Remove after the
- * startup investigation.
+ * Startup diagnostics — active only in development builds (`vite dev`).
+ * `import.meta.env.DEV` is statically replaced at build time, so in
+ * production these calls compile away and no instrumentation ships to users.
  */
+const ENABLED = import.meta.env.DEV
+
 export function logLoad(message: string): void {
+  if (!ENABLED) return
   console.log(`[load ${Math.round(performance.now())}ms] ${message}`)
 }
 
 /**
  * Logs the start and end of every asset the preloader waits on. Wraps the
  * handlers that drei's useProgress has already installed on the default
- * manager, so the progress bar keeps working.
+ * manager, so the progress bar keeps working. No-op outside dev builds.
  */
 export function installLoadingLogger(): void {
+  if (!ENABLED) return
   const manager = DefaultLoadingManager
 
   const previousStart = manager.onStart

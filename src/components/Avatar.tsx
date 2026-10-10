@@ -143,6 +143,11 @@ const Avatar = forwardRef<Group, Props>(({ config, speed, speech, name, isLocal 
     if (lArm.current) lArm.current.rotation.z = -talkAmp.current * 0.15
     if (rArm.current) rArm.current.rotation.z = talkAmp.current * 0.15
 
+    // Legs swing opposite to the arm on the same side (left leg with right
+    // arm), matching a natural walk cycle
+    if (lLeg.current) lLeg.current.rotation.x = swing * 0.7
+    if (rLeg.current) rLeg.current.rotation.x = -swing * 0.7
+
     // idle breathing + walk bob
     if (body.current) {
       body.current.position.y =
