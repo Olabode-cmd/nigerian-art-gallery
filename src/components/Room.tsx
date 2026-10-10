@@ -1,6 +1,7 @@
-import { lazy, Suspense, useLayoutEffect, useMemo, useRef } from 'react'
-import { useGLTF, useTexture } from '@react-three/drei'
-import { BoxGeometry, CylinderGeometry, MeshLambertMaterial, Object3D } from 'three'
+import { lazy, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useGLTF, useProgress } from '@react-three/drei'
+import { useLoader } from '@react-three/fiber'
+import { BoxGeometry, CylinderGeometry, MeshLambertMaterial, Object3D, TextureLoader } from 'three'
 import type { InstancedMesh } from 'three'
 import ArtPiece from './ArtPiece'
 import LazyDecorations from './LazyDecorations'
@@ -26,9 +27,13 @@ const COLUMN_OFFSETS: [number, number][] = [[-1, -1], [1, -1], [1, 1], [-1, 1]]
 // Loaded on demand with the troika text engine, on the first artwork selection
 const FloatingInfoPanel = lazy(() => import('./FloatingInfoPanel'))
 
-// Start artwork downloads immediately, in parallel with the room assets —
-// on slow connections the serial suspense cascade otherwise adds minutes
-useTexture.preload(art.map((artwork) => artwork.image))
+// Start artwork downloads immediately, in parallel with the room assets.
+// Preload each URL individually (not as one array): R3F's useLoader cache keys
+// on [loader, ...urls], so array-preloads never match the single-URL lookups in
+// ArtPiece — that mismatch caused every image to be fetched twice. Per-URL
+// preloads share ArtPiece's cache entries (one fetch each) and still fire at
+// module-eval, ahead of the room textures which start on first render.
+art.forEach((artwork) => useLoader.preload(TextureLoader, artwork.image))
 
 function getArtworkPlacement(index: number, roomSize: number): { position: Vec3; rotation: Vec3 } {
   const wallIndex = Math.floor(index / 4)
@@ -61,6 +66,22 @@ function getArtworkPlacement(index: number, roomSize: number): { position: Vec3;
   }
 }
 
+// Decorations (vase, plant, sculpture) are not needed to see or use the room —
+// they download after the critical assets finish, while the user is already in
+// the gallery. The same `progress === 100` signal the LoadingScreen uses means
+// the loading bar never waits on them.
+function DecorationsAfterCriticalPath() {
+  const progress = useProgress((state) => state.progress)
+  const [mount, setMount] = useState(false)
+
+  useEffect(() => {
+    if (progress === 100) setMount(true)
+  }, [progress])
+
+  if (!mount) return null
+  return <LazyDecorations />
+}
+
 export default function Room() {
   const selectArtwork = useGallery((state) => state.selectArtwork)
   const hasSelection = useGallery((state) => state.selectedArtwork !== null)
@@ -68,7 +89,7 @@ export default function Room() {
   const framesRef = useRef<InstancedMesh>(null)
 
   const floor = useOptimizedTexture(
-    '/models/floor_textures/textures/wood_floor_diff_2k.webp',
+    '/models/floor_textures/textures/wood_floor_diff_1k.webp',
     FLOOR_REPEAT
   )
   const wall = useOptimizedTexture(
@@ -167,8 +188,8 @@ export default function Room() {
         scale={[1.5, 1.5, 1.5]}
       />
 
-      {/* Decorative Elements - Lazy Loaded */}
-      <LazyDecorations />
+      {/* Decorative Elements - load after the critical path, not before it */}
+      <DecorationsAfterCriticalPath />
 
       {/* Instruction Sign — text is baked to a texture, no troika on the critical path */}
       <group position={[0, 9, -9]}>
