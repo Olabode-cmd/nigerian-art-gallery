@@ -4,12 +4,14 @@ import { Vector3, type Group } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { useGallery } from '../store'
 import { input } from '../input'
-import { localPose } from '../room'
-import { HEAD_Y } from './Avatar'
+import { localPeer, localPose, remotePlayers } from '../room'
+import { AVATAR_RADIUS, HEAD_Y } from './Avatar'
 
 const MOVE_SPEED = 5
 const TURN_SPEED = 1
 const ROOM_BOUND = 9 // roomSize/2 - wallBuffer
+const MIN_SEPARATION = AVATAR_RADIUS * 2
+const MIN_SEPARATION_SQ = MIN_SEPARATION * MIN_SEPARATION
 
 const THIRD_PERSON_DISTANCE = 4.5
 const THIRD_PERSON_HEIGHT = HEAD_Y + 0.9
@@ -30,6 +32,35 @@ const ARROW_KEYS = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright'])
 
 const clamp = (value: number, min: number, max: number) =>
   Math.max(min, Math.min(max, value))
+
+/**
+ * Pushes the local avatar out of any remote avatar it overlaps. Each client
+ * only moves its own avatar, but since every client does this, no pair of
+ * avatars can stand inside each other.
+ */
+function pushOutOfPeers(position: Vector3): void {
+  remotePlayers.forEach((peer, peerId) => {
+    if (!peer.hasPose) return
+    const dx = position.x - peer.x
+    const dz = position.z - peer.z
+    const distSq = dx * dx + dz * dz
+    if (distSq >= MIN_SEPARATION_SQ) return
+    const dist = Math.sqrt(distSq)
+    let normalX = 0
+    let normalZ = 0
+    if (dist > 1e-4) {
+      normalX = dx / dist
+      normalZ = dz / dist
+    } else {
+      // Exactly on top of each other (e.g. both at spawn): comparing IDs
+      // sends the two clients in opposite directions
+      normalX = localPeer.id < peerId ? 1 : -1
+    }
+    const depth = MIN_SEPARATION - dist
+    position.x = clamp(position.x + normalX * depth, -ROOM_BOUND, ROOM_BOUND)
+    position.z = clamp(position.z + normalZ * depth, -ROOM_BOUND, ROOM_BOUND)
+  })
+}
 
 const anyPressed = (keys: Set<string>, pressed: Set<string>) => {
   for (const key of keys) {
@@ -119,9 +150,11 @@ export default function AvatarControls({ avatarRef, controlsRef, speedRef }: Ava
         ROOM_BOUND
       )
     }
+    // Runs even when idle, so avatars that spawn on the same spot separate
+    pushOutOfPeers(avatar.position)
 
     // Drive the walk animation from actual displacement, so the legs stop
-    // when the avatar is blocked by a wall
+    // when the avatar is blocked by a wall or another avatar
     const moved = Math.hypot(avatar.position.x - prevX, avatar.position.z - prevZ)
     speedRef.current = moved > 1e-4 ? 1 : 0
 
