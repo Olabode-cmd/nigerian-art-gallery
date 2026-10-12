@@ -4,6 +4,8 @@ import type { Room } from 'trystero'
 import { useGallery } from './store'
 
 interface RemoteVoice {
+  /** Muted sink that keeps Chromium decoding the remote WebRTC audio */
+  element: HTMLAudioElement
   source: MediaStreamAudioSourceNode
   analyser: AnalyserNode
   panner: PannerNode
@@ -17,19 +19,61 @@ let micStream: MediaStream | null = null
 let micSource: MediaStreamAudioSourceNode | null = null
 let micAnalyser: AnalyserNode | null = null
 let micData: Uint8Array<ArrayBuffer> | null = null
+let micPending = false
+let gestureResumeArmed = false
 
 const remoteVoices = new Map<string, RemoteVoice>()
 const tmpForward = new Vector3()
 const localSpeechLevel = { current: 0 }
 
+// Autoplay policy keeps a context suspended until a user gesture. If resume()
+// is called outside one (e.g. a peer's stream arrives), retry on the next input.
+function resumeOnNextGesture(ctx: AudioContext): void {
+  if (gestureResumeArmed) return
+  gestureResumeArmed = true
+  const resume = () => {
+    gestureResumeArmed = false
+    window.removeEventListener('pointerdown', resume)
+    window.removeEventListener('keydown', resume)
+    void ctx.resume()
+  }
+  window.addEventListener('pointerdown', resume)
+  window.addEventListener('keydown', resume)
+}
+
 function ensureContext(): AudioContext {
   if (!context) {
     context = new AudioContext()
   }
-  if (context.state === 'suspended') {
+  if (context.state !== 'running') {
     void context.resume()
+    resumeOnNextGesture(context)
   }
   return context
+}
+
+function describeMicError(error: unknown): string {
+  const name = error instanceof DOMException ? error.name : ''
+  switch (name) {
+    case 'NotAllowedError':
+    case 'SecurityError':
+      return 'Microphone access denied. Check browser permissions.'
+    case 'NotFoundError':
+    case 'OverconstrainedError':
+      return 'No microphone found. Connect one and try again.'
+    case 'NotReadableError':
+      return 'Microphone is busy in another app. Close it and try again.'
+    default:
+      return 'Could not start the microphone. Try again.'
+  }
+}
+
+function shareStream(room: Room, stream: MediaStream, target?: string): void {
+  room.addStream(stream, target ? { target } : undefined).forEach((sending) => {
+    sending.catch((error: unknown) => {
+      console.warn('Voice: could not send microphone to a peer', error)
+    })
+  })
 }
 
 function computeLevel(analyser: AnalyserNode, data: Uint8Array<ArrayBuffer>): number {
@@ -72,6 +116,8 @@ function disableMic(): void {
 function removeRemote(peerId: string): void {
   const remote = remoteVoices.get(peerId)
   if (!remote) return
+  remote.element.pause()
+  remote.element.srcObject = null
   remote.source.disconnect()
   remote.analyser.disconnect()
   remote.panner.disconnect()
@@ -94,26 +140,46 @@ export const voice = {
 
   async enableVoice(): Promise<string | null> {
     if (!activeRoom) return 'Not in a room'
+    if (micStream || micPending) return null
+    // getUserMedia only exists on HTTPS or localhost — a LAN IP over http has none
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      return 'Voice chat needs a secure connection (HTTPS or localhost).'
+    }
+    const room = activeRoom
+    const ctx = ensureContext()
+    micPending = true
+    let stream: MediaStream
     try {
-      const ctx = ensureContext()
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       })
-      micStream = stream
-      micSource = ctx.createMediaStreamSource(stream)
-      micAnalyser = ctx.createAnalyser()
-      micAnalyser.fftSize = 256
-      micData = new Uint8Array(micAnalyser.frequencyBinCount)
-      // The analyser taps the mic but is not connected to the destination —
-      // no local echo
-      micSource.connect(micAnalyser)
-      Promise.allSettled(activeRoom.addStream(stream))
-      useGallery.getState().setVoiceError(null)
-      useGallery.getState().setVoiceEnabled(true)
-      return null
-    } catch {
-      return 'Microphone access denied. Check browser permissions.'
+    } catch (error) {
+      return describeMicError(error)
+    } finally {
+      micPending = false
     }
+    // The user left (or switched rooms) while the permission prompt was open
+    if (activeRoom !== room) {
+      stream.getTracks().forEach((track) => track.stop())
+      return null
+    }
+    micStream = stream
+    micSource = ctx.createMediaStreamSource(stream)
+    micAnalyser = ctx.createAnalyser()
+    micAnalyser.fftSize = 256
+    micData = new Uint8Array(micAnalyser.frequencyBinCount)
+    // The analyser taps the mic but is not connected to the destination —
+    // no local echo
+    micSource.connect(micAnalyser)
+    shareStream(room, stream)
+    useGallery.getState().setVoiceError(null)
+    useGallery.getState().setVoiceEnabled(true)
+    return null
+  },
+
+  /** Sends the live mic to a peer who joined after voice was turned on */
+  shareMicWith(room: Room, peerId: string): void {
+    if (micStream) shareStream(room, micStream, peerId)
   },
 
   toggleMute(): void {
@@ -127,6 +193,15 @@ export const voice = {
   addRemote(peerId: string, stream: MediaStream): void {
     removeRemote(peerId) // replace if the peer re-adds their stream
     const ctx = ensureContext()
+    // Chromium outputs silence for a remote WebRTC stream that is only routed
+    // through Web Audio (crbug.com/933677). Attaching it to a muted media
+    // element keeps it flowing; the audible path is still the panner below.
+    const element = new Audio()
+    element.muted = true
+    element.srcObject = stream
+    element.play().catch((error: unknown) => {
+      console.warn('Voice: remote audio sink did not start', error)
+    })
     const source = ctx.createMediaStreamSource(stream)
     const analyser = ctx.createAnalyser()
     analyser.fftSize = 256
@@ -141,6 +216,7 @@ export const voice = {
     analyser.connect(panner)
     panner.connect(ctx.destination)
     remoteVoices.set(peerId, {
+      element,
       source,
       analyser,
       panner,
@@ -160,9 +236,6 @@ export const voice = {
     if (remote) setNodePosition(remote.panner, x, y, z)
   },
 
-  getMicStream(): MediaStream | null {
-    return micStream
-  },
 
   updateLevels(): void {
     if (micAnalyser && micData) {

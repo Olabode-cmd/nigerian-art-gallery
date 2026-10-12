@@ -15,6 +15,9 @@ import { useGallery } from '../store'
 // The model faces -Z to match the movement/camera convention in AvatarControls
 // (forward = -Z, so third-person cameras behind at +Z see the back of the head)
 export const HEAD_Y = 4.3
+// Footprint for avatar-vs-avatar collision: covers the torso and the arms,
+// which hang at x = ±0.62 with a ~0.14 hand radius
+export const AVATAR_RADIUS = 0.75
 
 // Speech indicator bar layout, inside the billboard group
 const BAR_OFFSETS = [-0.24, -0.12, 0, 0.12, 0.24]

@@ -14,6 +14,10 @@ const TRANSIENT_ERROR_MS = 6_000 // auto-clear window for peer-level noise
 // Written by AvatarControls every frame; read by the pose sender
 export const localPose = { x: 0, z: 0, yaw: 0 }
 
+// Our Trystero peer ID once the multiplayer chunk has loaded. Lets two
+// clients agree on who steps which way when their avatars fully overlap.
+export const localPeer = { id: '' }
+
 type PoseData = { x: number; z: number; yaw: number }
 
 interface RemotePlayer {
@@ -158,8 +162,9 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
   }
 
   try {
-    const { joinRoom } = await loadTrystero()
+    const { joinRoom, selfId } = await loadTrystero()
     if (generation !== joinGeneration) return // user left while the chunk loaded
+    localPeer.id = selfId
 
     const instance = joinRoom({ appId: APP_ID }, roomId, {
       onJoinError: () => {
@@ -193,10 +198,7 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
       safeSend(configAction, profile.avatarConfig, peerId)
       safeSend(metaAction, { name: sanitizeName(profile.userName) }, peerId)
       // Late joiners need the mic stream if voice is already on
-      const micStream = voice.getMicStream()
-      if (micStream) {
-        Promise.allSettled(instance.addStream(micStream, { target: peerId }))
-      }
+      voice.shareMicWith(instance, peerId)
     }
     instance.onPeerLeave = (peerId) => {
       voice.removeRemote(peerId)
