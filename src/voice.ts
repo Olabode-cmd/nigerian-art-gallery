@@ -26,24 +26,38 @@ const remoteVoices = new Map<string, RemoteVoice>()
 const tmpForward = new Vector3()
 const localSpeechLevel = { current: 0 }
 
-// Autoplay policy keeps a context suspended until a user gesture. If resume()
-// is called outside one (e.g. a peer's stream arrives), retry on the next input.
+// Events browsers treat as a user activation. `pointerdown` is not one for
+// touch input (only pointerup/touchend are), so it can't be used alone.
+const GESTURE_EVENTS = ['pointerup', 'touchend', 'click', 'keydown'] as const
+
+// Autoplay policy keeps a context suspended until a user gesture, and it can
+// be suspended again later (phone call, iOS interruption). Keep retrying on
+// input until the context is actually running.
 function resumeOnNextGesture(ctx: AudioContext): void {
   if (gestureResumeArmed) return
   gestureResumeArmed = true
   const resume = () => {
-    gestureResumeArmed = false
-    window.removeEventListener('pointerdown', resume)
-    window.removeEventListener('keydown', resume)
-    void ctx.resume()
+    ctx
+      .resume()
+      .then(() => {
+        if (ctx.state !== 'running') return
+        gestureResumeArmed = false
+        GESTURE_EVENTS.forEach((type) => window.removeEventListener(type, resume))
+      })
+      .catch(() => {
+        // Not a valid activation yet — stay armed for the next input
+      })
   }
-  window.addEventListener('pointerdown', resume)
-  window.addEventListener('keydown', resume)
+  GESTURE_EVENTS.forEach((type) => window.addEventListener(type, resume))
 }
 
 function ensureContext(): AudioContext {
   if (!context) {
-    context = new AudioContext()
+    const created = new AudioContext()
+    created.addEventListener('statechange', () => {
+      if (created.state !== 'running') resumeOnNextGesture(created)
+    })
+    context = created
   }
   if (context.state !== 'running') {
     void context.resume()
@@ -113,6 +127,10 @@ function disableMic(): void {
   store.setVoiceMuted(false)
 }
 
+function syncVoicePeerCount(): void {
+  useGallery.getState().setVoicePeerCount(remoteVoices.size)
+}
+
 function removeRemote(peerId: string): void {
   const remote = remoteVoices.get(peerId)
   if (!remote) return
@@ -122,6 +140,16 @@ function removeRemote(peerId: string): void {
   remote.analyser.disconnect()
   remote.panner.disconnect()
   remoteVoices.delete(peerId)
+  syncVoicePeerCount()
+}
+
+// The mic vanished under us (headset unplugged, device revoked): the UI would
+// otherwise keep showing "live" while sending silence
+function handleMicEnded(stream: MediaStream): void {
+  if (micStream !== stream) return
+  activeRoom?.removeStream(stream)
+  disableMic()
+  useGallery.getState().setVoiceError('Microphone disconnected. Turn it on again to keep talking.')
 }
 
 export const voice = {
@@ -164,6 +192,7 @@ export const voice = {
       return null
     }
     micStream = stream
+    stream.getAudioTracks()[0]?.addEventListener('ended', () => handleMicEnded(stream))
     micSource = ctx.createMediaStreamSource(stream)
     micAnalyser = ctx.createAnalyser()
     micAnalyser.fftSize = 256
@@ -205,13 +234,15 @@ export const voice = {
     const source = ctx.createMediaStreamSource(stream)
     const analyser = ctx.createAnalyser()
     analyser.fftSize = 256
-    // Spatial audio: each peer's voice comes from where their avatar stands
+    // Spatial audio: each peer's voice comes from where their avatar stands.
+    // Full volume within refDistance, then a gentle fade: the room is ~18 units
+    // wide, so a steeper falloff made distant players inaudible.
     const panner = ctx.createPanner()
     panner.panningModel = 'HRTF'
     panner.distanceModel = 'inverse'
-    panner.refDistance = 2
+    panner.refDistance = 6
     panner.maxDistance = 40
-    panner.rolloffFactor = 1.2
+    panner.rolloffFactor = 0.7
     source.connect(analyser)
     analyser.connect(panner)
     panner.connect(ctx.destination)
@@ -223,6 +254,15 @@ export const voice = {
       data: new Uint8Array(analyser.frequencyBinCount),
       level: 0,
     })
+    // The sender stopped sharing (mic unplugged or turned off): stop counting
+    // them as on voice. Guarded so a replaced stream can't remove its successor.
+    stream.addEventListener('removetrack', () => {
+      const current = remoteVoices.get(peerId)
+      if (current?.element.srcObject === stream && stream.getAudioTracks().length === 0) {
+        removeRemote(peerId)
+      }
+    })
+    syncVoicePeerCount()
   },
 
   getRemoteLevel(peerId: string): number {
@@ -249,10 +289,15 @@ export const voice = {
     })
   },
 
-  updateListener(camera: Camera): void {
+  /**
+   * Ears sit on the local avatar, so distance to other voices is
+   * avatar-to-avatar and doesn't change when the camera zooms out. The camera
+   * only supplies orientation, so left/right matches what the player sees.
+   */
+  updateListener(camera: Camera, x: number, y: number, z: number): void {
     if (!context || context.state !== 'running') return
     const listener = context.listener
-    const position = camera.position
+    const position = { x, y, z }
     camera.getWorldDirection(tmpForward)
     if (listener.positionX) {
       listener.positionX.value = position.x
