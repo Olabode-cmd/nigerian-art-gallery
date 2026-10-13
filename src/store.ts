@@ -80,6 +80,8 @@ interface GalleryState {
   voiceEnabled: boolean
   voiceMuted: boolean
   voiceError: string | null
+  /** Remote players whose microphone audio is currently arriving */
+  voicePeerCount: number
   userName: string
   recentRooms: string[]
   peers: Record<string, { config: AvatarConfig; name?: string }>
@@ -97,6 +99,7 @@ interface GalleryState {
   setVoiceEnabled: (enabled: boolean) => void
   setVoiceMuted: (muted: boolean) => void
   setVoiceError: (error: string | null) => void
+  setVoicePeerCount: (count: number) => void
   setUserName: (name: string) => void
   setPeerName: (id: string, name: string) => void
   addRecentRoom: (id: string) => void
@@ -121,6 +124,7 @@ export const useGallery = create<GalleryState>()((set) => ({
   voiceEnabled: false,
   voiceMuted: false,
   voiceError: null,
+  voicePeerCount: 0,
   userName: loadUserName(),
   recentRooms: loadRecentRooms(),
   peers: {},
@@ -151,6 +155,7 @@ export const useGallery = create<GalleryState>()((set) => ({
   setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
   setVoiceMuted: (voiceMuted) => set({ voiceMuted }),
   setVoiceError: (voiceError) => set({ voiceError }),
+  setVoicePeerCount: (voicePeerCount) => set({ voicePeerCount }),
   setUserName: (userName) => {
     set({ userName })
     try {
