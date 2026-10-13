@@ -14,6 +14,7 @@ import { VRButton } from '../webxr/VRButton'
 import { useGallery, detectIsMobile } from '../store'
 import { logLoad } from '../debugLog'
 import { voice } from '../voice'
+import { localPose } from '../room'
 import TouchControls from './TouchControls'
 import AvatarCustomizer from './AvatarCustomizer'
 import RoomLobby from './RoomLobby'
@@ -22,9 +23,9 @@ import VoiceControls from './VoiceControls'
 function VoiceAnalyzer() {
   const camera = useThree((state) => state.camera)
   useFrame(() => {
-    // Drives speech indicators and keeps the 3D audio listener at the camera
+    // Drives speech indicators and keeps the 3D audio listener on the avatar
     voice.updateLevels()
-    voice.updateListener(camera)
+    voice.updateListener(camera, localPose.x, HEAD_Y, localPose.z)
   })
   return null
 }
