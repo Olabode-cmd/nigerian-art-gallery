@@ -1,4 +1,4 @@
-import type { DataPayload, MessageAction, Room } from 'trystero'
+import type { DataPayload, MessageAction, Room, TurnServerConfig } from 'trystero'
 import { sanitizeAvatarConfig, type AvatarConfig } from './avatarConfig'
 import { useGallery } from './store'
 import { voice } from './voice'
@@ -10,6 +10,13 @@ const POSE_INTERVAL_MS = 80 // ~12.5 Hz
 const ROOM_BOUND = 9
 const SEARCH_TIMEOUT_MS = 10_000 // hint when no peer has connected yet
 const TRANSIENT_ERROR_MS = 6_000 // auto-clear window for peer-level noise
+// Public Nostr relays are free and flaky: more of them means a dead or
+// auth-gated relay can't stop two players from finding each other (default 5)
+const RELAY_REDUNDANCY = 8
+// Signaling timestamps come from each device's clock, so a skew beyond this
+// can make relays drop the other player's announcements
+const CLOCK_SKEW_LIMIT_MS = 10_000
+const CLOCK_CHECK_TIMEOUT_MS = 4_000
 
 // Written by AvatarControls every frame; read by the pose sender
 export const localPose = { x: 0, z: 0, yaw: 0 }
@@ -73,6 +80,8 @@ let joinPending = false
 let joinGeneration = 0
 let searchTimer: number | null = null
 let joinErrorTimer: number | null = null
+// Shown whenever no transient message is active; cleared once a peer connects
+let persistentNotice: string | null = null
 
 function sanitizeName(name: unknown): string {
   if (typeof name !== 'string') return ''
@@ -96,8 +105,97 @@ function showTransientRoomError(message: string): void {
   if (joinErrorTimer !== null) clearTimeout(joinErrorTimer)
   joinErrorTimer = window.setTimeout(() => {
     joinErrorTimer = null
-    useGallery.getState().setRoomError(null)
+    useGallery.getState().setRoomError(persistentNotice)
   }, TRANSIENT_ERROR_MS)
+}
+
+/** A notice that stays until it is replaced or a peer connects */
+function setPersistentNotice(message: string | null): void {
+  persistentNotice = message
+  if (joinErrorTimer === null) useGallery.getState().setRoomError(message)
+}
+
+/**
+ * Optional TURN relay, configured through VITE_TURN_* env vars. Without one,
+ * players behind symmetric or carrier-grade NAT (common on mobile data)
+ * cannot connect, because Trystero only ships public STUN servers.
+ */
+function readTurnConfig(): TurnServerConfig[] | undefined {
+  const urls = String(import.meta.env.VITE_TURN_URLS ?? '')
+    .split(',')
+    .map((url) => url.trim())
+    .filter((url) => /^turns?:/i.test(url))
+  const username = import.meta.env.VITE_TURN_USERNAME
+  const credential = import.meta.env.VITE_TURN_CREDENTIAL
+  if (urls.length === 0) return undefined
+  if (!username || !credential) {
+    console.warn('Room: VITE_TURN_URLS is set but VITE_TURN_USERNAME / VITE_TURN_CREDENTIAL are missing; TURN disabled')
+    return undefined
+  }
+  return [{ urls, username, credential }]
+}
+
+/**
+ * Server time minus device time, measured against our own host. Returns null
+ * when it can't be measured, so a flaky network never raises a false warning.
+ */
+async function measureClockSkewMs(): Promise<number | null> {
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), CLOCK_CHECK_TIMEOUT_MS)
+  try {
+    const sent = Date.now()
+    const response = await fetch(window.location.origin + '/', {
+      method: 'HEAD',
+      cache: 'no-store',
+      signal: controller.signal,
+    })
+    const received = Date.now()
+    const dateHeader = response.headers.get('date')
+    if (!dateHeader) return null
+    const serverMs = Date.parse(dateHeader)
+    if (!Number.isFinite(serverMs)) return null
+    // A cached response reports when it was generated; Age is how long ago
+    const ageMs = (Number(response.headers.get('age')) || 0) * 1000
+    return serverMs + ageMs - (sent + received) / 2
+  } catch {
+    return null
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
+function describeClockSkew(skewMs: number): string {
+  const seconds = Math.round(Math.abs(skewMs) / 1000)
+  const amount = seconds >= 90 ? `${Math.round(seconds / 60)} minutes` : `${seconds} seconds`
+  const direction = skewMs > 0 ? 'behind' : 'ahead'
+  return `Your device clock is about ${amount} ${direction}. Turn on automatic date and time, then rejoin the room.`
+}
+
+/**
+ * Subclass that reports ICE failures. Trystero hides failed connection
+ * attempts, so without this a blocked connection looks like an empty room.
+ */
+function createObservedPeerConnection(hasTurn: boolean): typeof RTCPeerConnection {
+  return class extends RTCPeerConnection {
+    constructor(config?: RTCConfiguration) {
+      super(config)
+      const candidateTypes: Record<string, number> = {}
+      this.addEventListener('icecandidate', (event) => {
+        const type = event.candidate?.type
+        if (type) candidateTypes[type] = (candidateTypes[type] ?? 0) + 1
+      })
+      this.addEventListener('iceconnectionstatechange', () => {
+        if (this.iceConnectionState !== 'failed') return
+        console.warn('Room: ICE connection failed', {
+          localCandidates: candidateTypes,
+          turnConfigured: hasTurn,
+        })
+        showTransientRoomError(
+          'Could not reach another player directly. Their network may be blocking peer-to-peer connections.'
+        )
+      })
+    }
+  }
 }
 
 /** Keeps the ?room= deep link in sync with the active room */
@@ -156,6 +254,7 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
   const store = useGallery.getState()
   store.setRoomId(roomId)
   store.setRoomError(null)
+  persistentNotice = null
   if (joinErrorTimer !== null) {
     clearTimeout(joinErrorTimer)
     joinErrorTimer = null
@@ -166,11 +265,30 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
     if (generation !== joinGeneration) return // user left while the chunk loaded
     localPeer.id = selfId
 
-    const instance = joinRoom({ appId: APP_ID }, roomId, {
-      onJoinError: () => {
-        // Handshake failures are per-peer, not room failures — brief hint only
-        showTransientRoomError('Could not connect to a peer. They may have a weak connection.')
+    const turnConfig = readTurnConfig()
+    const instance = joinRoom(
+      {
+        appId: APP_ID,
+        relayConfig: { redundancy: RELAY_REDUNDANCY },
+        rtcPolyfill: createObservedPeerConnection(turnConfig !== undefined),
+        ...(turnConfig ? { turnConfig } : {}),
       },
+      roomId,
+      {
+        onJoinError: (details) => {
+          // Handshake failures are per-peer, not room failures — brief hint only
+          console.warn('Room: peer handshake failed', details.error)
+          showTransientRoomError('Could not connect to a peer. They may have a weak connection.')
+        },
+      }
+    )
+
+    // Off the join path: a slow or failed check must never delay connecting
+    void measureClockSkewMs().then((skewMs) => {
+      if (room !== instance || skewMs === null || Math.abs(skewMs) < CLOCK_SKEW_LIMIT_MS) return
+      if (Object.keys(useGallery.getState().peers).length > 0) return
+      console.warn('Room: device clock skew (ms, server minus device):', skewMs)
+      setPersistentNotice(describeClockSkew(skewMs))
     })
 
     poseAction = instance.makeAction<PoseData>('pose', {
@@ -193,6 +311,7 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
         clearTimeout(searchTimer)
         searchTimer = null
       }
+      setPersistentNotice(null)
       const profile = useGallery.getState()
       // Give the new peer our config and name; they do the same for us
       safeSend(configAction, profile.avatarConfig, peerId)
@@ -221,8 +340,12 @@ export async function joinRoomAsPlayer(roomId: string): Promise<void> {
     // searching instead of letting the user sit in a silent room
     searchTimer = window.setTimeout(() => {
       searchTimer = null
-      if (room === instance && Object.keys(useGallery.getState().peers).length === 0) {
-        showTransientRoomError('Still searching for players — check your connection.')
+      if (room !== instance || Object.keys(useGallery.getState().peers).length > 0) return
+      // A clock-skew notice is more specific, so don't replace it
+      if (persistentNotice === null) {
+        setPersistentNotice(
+          'Still searching for players. Check that you both entered the same room code and have a working connection.'
+        )
       }
     }, SEARCH_TIMEOUT_MS)
 
@@ -255,6 +378,7 @@ export function leaveRoom(): void {
     clearTimeout(joinErrorTimer)
     joinErrorTimer = null
   }
+  persistentNotice = null
   if (poseInterval !== null) {
     clearInterval(poseInterval)
     poseInterval = null

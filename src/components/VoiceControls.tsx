@@ -9,8 +9,20 @@ export default function VoiceControls() {
   const voiceMuted = useGallery((state) => state.voiceMuted)
   const voiceError = useGallery((state) => state.voiceError)
   const setVoiceError = useGallery((state) => state.setVoiceError)
+  const voicePeerCount = useGallery((state) => state.voicePeerCount)
+  const peerCount = useGallery((state) => Object.keys(state.peers).length)
 
   if (!roomId) return null
+
+  // Only shown once someone else is here, so it never describes an empty room
+  const voiceStatus =
+    peerCount === 0
+      ? null
+      : voicePeerCount === 0
+        ? 'No one else has their mic on'
+        : voicePeerCount === 1
+          ? '1 player on voice'
+          : `${voicePeerCount} players on voice`
 
   const handleClick = () => {
     if (!voiceEnabled) {
@@ -62,6 +74,19 @@ export default function VoiceControls() {
           }}
         >
           {voiceError}
+        </div>
+      )}
+      {voiceStatus && (
+        <div
+          style={{
+            color: '#d1d5db',
+            fontSize: '12px',
+            backgroundColor: 'rgba(0, 0, 0, 0.7)',
+            padding: '4px 10px',
+            borderRadius: '6px'
+          }}
+        >
+          {voiceStatus}
         </div>
       )}
       <button
